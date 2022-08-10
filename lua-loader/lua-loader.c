@@ -1,3 +1,6 @@
+#define CKB_C_STDLIB_MALLOC 1
+#define CKB_C_STDLIB_PRINTF 1
+
 #define lua_c
 
 #include <limits.h>
