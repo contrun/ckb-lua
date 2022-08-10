@@ -8,7 +8,7 @@
 #define lauxlib_h
 
 #include <stddef.h>
-#include <stdio.h>
+#include "mocked_stdio.h"
 
 #include "lua.h"
 #include "luaconf.h"
@@ -218,15 +218,6 @@ LUALIB_API char *(luaL_buffinitsize)(lua_State *L, luaL_Buffer *B, size_t sz);
 */
 
 #define LUA_FILEHANDLE "FILE*"
-
-#define FILE MY_FILE
-
-struct _MY_IO_FILE {
-    void *p;
-};
-
-/* The opaque type of streams.  This is the definition used elsewhere.  */
-typedef struct _MY_IO_FILE MY_FILE;
 
 typedef struct luaL_Stream {
     FILE *f;              /* stream (NULL for incompletely created streams) */

@@ -26,7 +26,7 @@ build/lua-loader: build/lua-loader.o lualib/liblua.a
 	$(LD) -lm $(LDFLAGS) -o $@ $^
 
 fmt:
-	clang-format -style="{BasedOnStyle: google, IndentWidth: 4}" -i lualib/*.c lualib/*.h lua-loader/*.c
+	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.c
 
 clean-local:
 	rm -f build/*.o

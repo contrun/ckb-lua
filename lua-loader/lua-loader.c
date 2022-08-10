@@ -1,9 +1,3 @@
-/*
-** $Id: lua.c $
-** Lua stand-alone interpreter
-** See Copyright Notice in lua.h
-*/
-
 #define lua_c
 
 #include <limits.h>
@@ -17,14 +11,7 @@
 #include "lualib.h"
 
 // make compiler happy
-int getc(FILE *__stream) { return 0; }
-
-int fflush(FILE *__stream) { return 0; }
-
 int exit(int c) { return 0; }
-
-long ftell(FILE *__stream) { return 0; }
-
 void abort() {}
 
 #if !defined(LUA_PROGNAME)

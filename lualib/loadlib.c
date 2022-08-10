@@ -11,9 +11,9 @@
 #define loadlib_c
 #define LUA_LIB
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mocked_stdio.h"
 
 #include "lauxlib.h"
 #include "lprefix.h"
