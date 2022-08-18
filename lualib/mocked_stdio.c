@@ -31,7 +31,9 @@ int setvbuf(FILE *__stream, char *__buf, int __modes, size_t __n) { return 0; }
 
 int fprintf(FILE *__stream, const char *__format, ...) { return 0; }
 
+#ifndef CKB_C_STDLIB_PRINTF
 int printf(const char *__format, ...) { return 0; }
+#endif
 
 int sprintf(char *__s, const char *__format, ...) { return 0; }
 
