@@ -237,7 +237,7 @@ typedef struct luaL_Stream {
 // TODO
 #define lua_writestring(s, l) \
     do {                      \
-        (void)s;              \
+        printf(s);            \
         (void)l;              \
     } while (0)
 #endif
