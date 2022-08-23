@@ -1,4 +1,4 @@
 [submodule "deps/ckb-c-stdlib"]
 	path = deps/ckb-c-stdlib
-	url = https://github.com/XuJiandong/ckb-c-stdlib.git
-	branch = malloc
+	url = https://github.com/contrun/ckb-c-stdlib.git
+	branch = add-missing-lua-dependencies

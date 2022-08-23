@@ -13,9 +13,17 @@
 #include "lua.h"
 #include "lualib.h"
 
+#include "ckb_syscalls.h"
+
 // make compiler happy
-int exit(int c) { return 0; }
-void abort() {}
+int exit(int c) {
+  ckb_exit(c);
+  return 0;
+}
+
+void abort() {
+  ckb_exit(-1);
+}
 
 #if !defined(LUA_PROGNAME)
 #define LUA_PROGNAME "lua"

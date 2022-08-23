@@ -31,8 +31,6 @@ int setvbuf(FILE *__stream, char *__buf, int __modes, size_t __n) { return 0; }
 
 int fprintf(FILE *__stream, const char *__format, ...) { return 0; }
 
-int printf(const char *__format, ...) { return 0; }
-
 int sprintf(char *__s, const char *__format, ...) { return 0; }
 
 int vfprintf(FILE *__s, const char *__format, ...) { return 0; }
