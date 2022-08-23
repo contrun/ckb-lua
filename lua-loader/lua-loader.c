@@ -15,15 +15,12 @@
 
 #include "ckb_syscalls.h"
 
-// make compiler happy
 int exit(int c) {
-  ckb_exit(c);
-  return 0;
+    ckb_exit(c);
+    return 0;
 }
 
-void abort() {
-  ckb_exit(-1);
-}
+void abort() { ckb_exit(-1); }
 
 #if !defined(LUA_PROGNAME)
 #define LUA_PROGNAME "lua"
@@ -41,22 +38,14 @@ static const char *progname = LUA_PROGNAME;
 
 static void print_usage(const char *badoption) {
     lua_writestringerror("%s: ", progname);
-    if (badoption[1] == 'e' || badoption[1] == 'l')
+    if (badoption[1] == 'e')
         lua_writestringerror("'%s' needs argument\n", badoption);
     else
         lua_writestringerror("unrecognized option '%s'\n", badoption);
     lua_writestringerror(
         "usage: %s [options] [script [args]]\n"
         "Available options are:\n"
-        "  -e stat   execute string 'stat'\n"
-        "  -i        enter interactive mode after executing 'script'\n"
-        "  -l mod    require library 'mod' into global 'mod'\n"
-        "  -l g=mod  require library 'mod' into global 'g'\n"
-        "  -v        show version information\n"
-        "  -E        ignore environment variables\n"
-        "  -W        turn warnings on\n"
-        "  --        stop handling options\n"
-        "  -         stop handling options and execute stdin\n",
+        "  -e stat   execute string 'stat'\n",
         progname);
 }
 
@@ -187,11 +176,8 @@ static int pushargs(lua_State *L) {
 
 /* bits of various argument indicators in 'args' */
 #define has_error 1 /* bad option */
-#define has_i 2     /* -i */
-#define has_v 4     /* -v */
 #define has_e 8     /* -e */
-#define has_E 16    /* -E */
-
+#define has_r 4     /* -r */
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -203,41 +189,20 @@ static int collectargs(char **argv, int *first) {
     int i;
     for (i = 1; argv[i] != NULL; i++) {
         *first = i;
-        if (argv[i][0] != '-')          /* not an option? */
-            return args;                /* stop handling options */
-        switch (argv[i][1]) {           /* else check option */
-            case '-':                   /* '--' */
-                if (argv[i][2] != '\0') /* extra characters after '--'? */
-                    return has_error;   /* invalid option */
-                *first = i + 1;
-                return args;
-            case '\0':       /* '-' */
-                return args; /* script "name" is '-' */
-            case 'E':
-                if (argv[i][2] != '\0') /* extra characters? */
-                    return has_error;   /* invalid option */
-                args |= has_E;
-                break;
-            case 'W':
-                if (argv[i][2] != '\0') /* extra characters? */
-                    return has_error;   /* invalid option */
-                break;
-            case 'i':
-                args |= has_i; /* (-i implies -v) */ /* FALLTHROUGH */
-            case 'v':
-                if (argv[i][2] != '\0') /* extra characters? */
-                    return has_error;   /* invalid option */
-                args |= has_v;
-                break;
+        if (argv[i][0] != '-') /* not an option? */
+            return args;       /* stop handling options */
+        switch (argv[i][1]) {  /* else check option */
             case 'e':
                 args |= has_e;            /* FALLTHROUGH */
-            case 'l':                     /* both options need an argument */
                 if (argv[i][2] == '\0') { /* no concatenated argument? */
                     i++;                  /* try next 'argv' */
                     if (argv[i] == NULL || argv[i][0] == '-')
                         return has_error; /* no next argument or it is another
                                              option */
                 }
+                break;
+            case 'r':
+                args |= has_r;
                 break;
             default: /* invalid option */
                 return has_error;
@@ -258,8 +223,7 @@ static int runargs(lua_State *L, char **argv, int n) {
         int option = argv[i][1];
         lua_assert(argv[i][0] == '-'); /* already checked */
         switch (option) {
-            case 'e':
-            case 'l': {
+            case 'e': {
                 int status;
                 char *extra = argv[i] + 2; /* both options need an argument */
                 if (*extra == '\0') extra = argv[++i];
@@ -269,12 +233,29 @@ static int runargs(lua_State *L, char **argv, int n) {
                 if (status != LUA_OK) return 0;
                 break;
             }
-            case 'W':
-                lua_warning(L, "@on", 0); /* warnings on */
-                break;
         }
     }
     return 1;
+}
+
+int read_file(char *buf, int size) {
+    int ret = syscall(9000, buf, size, 0, 0, 0, 0);
+    return ret;
+}
+
+static int run_from_file(lua_State *L) {
+    char buf[1024 * 512];
+    int count = read_file(buf, sizeof(buf));
+    if (count < 0) {
+        printf("error reading from file");
+        return 0;
+    }
+    buf[count] = 0;
+    int status = dostring(L, buf, "=(read file)");
+    if (status != LUA_OK)
+        return 0;
+    else
+        return 1;
 }
 
 /*
@@ -285,28 +266,6 @@ static int runargs(lua_State *L, char **argv, int n) {
 #if !defined(LUA_MAXINPUT)
 #define LUA_MAXINPUT 512
 #endif
-
-/* mark in error messages for incomplete statements */
-#define EOFMARK "<eof>"
-#define marklen (sizeof(EOFMARK) / sizeof(char) - 1)
-
-/*
-** Check whether 'status' signals a syntax error and the error
-** message at the top of the stack ends with the above mark for
-** incomplete statements.
-*/
-static int incomplete(lua_State *L, int status) {
-    if (status == LUA_ERRSYNTAX) {
-        size_t lmsg;
-        const char *msg = lua_tolstring(L, -1, &lmsg);
-        if (lmsg >= marklen && strcmp(msg + lmsg - marklen, EOFMARK) == 0) {
-            lua_pop(L, 1);
-            return 1;
-        }
-    }
-    return 0; /* else... */
-}
-
 /*
 ** Prints (calling the Lua 'print' function) any values on the stack
 */
@@ -337,18 +296,15 @@ static int pmain(lua_State *L) {
         print_usage(argv[script]); /* 'script' has index of bad arg. */
         return 0;
     }
-    if (args & has_v) /* option '-v'? */
-        print_version();
-    if (args & has_E) {        /* option '-E'? */
-        lua_pushboolean(L, 1); /* signal for libraries to ignore env. vars. */
-        lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
-    }
     luaL_openlibs(L);                      /* open standard libraries */
     createargtable(L, argv, argc, script); /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
     if (!runargs(L, argv, script))         /* execute arguments -e and -l */
         return 0;                          /* something failed */
-    lua_pushboolean(L, 1);                 /* signal no errors */
+    if (args & has_r) {
+        if (!run_from_file(L)) return 0;
+    }
+    lua_pushboolean(L, 1); /* signal no errors */
     return 1;
 }
 
