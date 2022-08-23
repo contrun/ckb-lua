@@ -20,7 +20,7 @@ double log2(double);
 
 double log10(double);
 
-// double pow(double, double);
+double pow(double, double);
 
 double sin(double);
 

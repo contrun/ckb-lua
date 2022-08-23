@@ -20,7 +20,7 @@ double log2(double x) { return 0; }
 
 double log10(double x) { return 0; }
 
-// double pow(double x, double y) { return 0; }
+double pow(double x, double y) { return 0; }
 
 double sin(double x) { return 0; }
 
