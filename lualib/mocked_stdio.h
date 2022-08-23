@@ -44,10 +44,6 @@ int setvbuf(FILE *__stream, char *__buf, int __modes, size_t __n);
 
 int fprintf(FILE *__stream, const char *__format, ...);
 
-#ifndef CKB_C_STDLIB_PRINTF
-// int printf(const char *__format, ...);
-#endif
-
 int sprintf(char *__s, const char *__format, ...);
 
 int vfprintf(FILE *__s, const char *__format, ...);
