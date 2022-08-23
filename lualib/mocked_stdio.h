@@ -55,6 +55,7 @@ int vprintf(const char *__format, ...);
 int vsprintf(char *__s, const char *__format, ...);
 
 int snprintf(char *__s, size_t __maxlen, const char *__format, ...);
+int snprintf_(char *__s, size_t __maxlen, const char *__format, ...);
 
 int vsnprintf(char *__s, size_t __maxlen, const char *__format, ...);
 

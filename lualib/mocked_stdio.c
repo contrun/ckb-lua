@@ -37,13 +37,6 @@ int vfprintf(FILE *__s, const char *__format, ...) { return 0; }
 int vprintf(const char *__format, ...) { return 0; }
 int vsprintf(char *__s, const char *__format, ...) { return 0; }
 
-int snprintf(char *__s, size_t __maxlen, const char *__format, ...) {
-    return 0;
-}
-
-int vsnprintf(char *__s, size_t __maxlen, const char *__format, ...) {
-    return 0;
-}
 int fscanf(FILE *__stream, const char *__format, ...) { return 0; }
 
 int scanf(const char *__format, ...) { return 0; }

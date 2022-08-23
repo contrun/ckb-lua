@@ -246,7 +246,7 @@ int read_file(char *buf, int size) {
 static int run_from_file(lua_State *L) {
     char buf[1024 * 512];
     int count = read_file(buf, sizeof(buf));
-    if (count < 0) {
+    if (count < 0 || count == sizeof(buf)) {
         printf("error reading from file");
         return 0;
     }
