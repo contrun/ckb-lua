@@ -9,7 +9,11 @@
 
 #include <float.h>
 #include <limits.h>
+
 #include <math.h>
+
+#include "mocked_math.h"
+
 #include <stdlib.h>
 
 #include "lprefix.h"
