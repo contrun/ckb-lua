@@ -394,7 +394,7 @@ do print("testing errors in __close")
   end
 
   -- TODO
-  -- local stat, msg = pcall(foo, false)
+  local stat, msg = pcall(foo, false)
   -- assert(string.find(msg, "@x"))
 
 
@@ -438,7 +438,7 @@ do print("testing errors in __close")
     error(4)    -- original error
   end
   -- TODO
-  -- local stat, msg = pcall(foo, true)
+  local stat, msg = pcall(foo, true)
   -- assert(string.find(msg, "@x1"))
 
   -- error leaving a block
@@ -467,7 +467,7 @@ do print("testing errors in __close")
     local x123 <close> = func2close(function () error("@x123") end)
   end
 
-  -- local st, msg = xpcall(foo, debug.traceback)
+  local st, msg = xpcall(foo, debug.traceback)
   -- assert(string.match(msg, "^[^ ]* @x123"))
   -- assert(string.find(msg, "in metamethod 'close'"))
 end

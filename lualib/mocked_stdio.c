@@ -5,92 +5,278 @@ FILE *stdin;
 FILE *stdout;
 FILE *stderr;
 
-int remove(const char *__filename) { return 0; }
+int ckb_exit(signed char code);
 
-int rename(const char *__old, const char *__new) { return 0; }
+static int s_local_access_enabled = 0;
+void enable_local_access(int b) { s_local_access_enabled = b; }
 
-FILE *tmpfile(void) { return 0; }
+#define memory_barrier() asm volatile("fence" ::: "memory")
 
-char *tmpnam(char *__s) { return 0; }
+static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
+                                      long _a3, long _a4, long _a5) {
+    register long a0 asm("a0") = _a0;
+    register long a1 asm("a1") = _a1;
+    register long a2 asm("a2") = _a2;
+    register long a3 asm("a3") = _a3;
+    register long a4 asm("a4") = _a4;
+    register long a5 asm("a5") = _a5;
 
-char *tempnam(const char *__dir, const char *__pfx) { return 0; }
+#ifdef __riscv_32e
+    register long syscall_id asm("t0") = n;
+#else
+    register long syscall_id asm("a7") = n;
+#endif
 
-int fclose(FILE *__stream) { return 0; }
+    asm volatile("scall"
+                 : "+r"(a0)
+                 : "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5),
+                   "r"(syscall_id));
+    /*
+     * Syscalls might modify memory sent as pointer, adding a barrier here
+     * ensures gcc won't do incorrect optimization.
+     */
+    memory_barrier();
 
-int fflush(FILE *__stream) { return 0; }
+    return a0;
+}
 
-FILE *fopen(const char *__filename, const char *__modes) { return 0; }
+#define ckb_syscall(n, a, b, c, d, e, f)                              \
+    __internal_syscall(n, (long)(a), (long)(b), (long)(c), (long)(d), \
+                       (long)(e), (long)(f))
 
-FILE *freopen(const char *__filename, const char *__modes, FILE *__stream) {
+#define NOT_IMPL(name)                                                 \
+    do {                                                               \
+        printf("The %s is not implemented in mocked_stdio.c ", #name); \
+        ckb_exit(-1);                                                  \
+    } while (0)
+
+int remove(const char *__filename) {
+    NOT_IMPL(remove);
     return 0;
 }
 
-void setbuf(FILE *__stream, char *__buf) {}
+int rename(const char *__old, const char *__new) {
+    NOT_IMPL(rename);
+    return 0;
+}
 
-int setvbuf(FILE *__stream, char *__buf, int __modes, size_t __n) { return 0; }
+FILE *tmpfile(void) {
+    NOT_IMPL(tmpfile);
+    return 0;
+}
 
-int fprintf(FILE *__stream, const char *__format, ...) { return 0; }
+char *tmpnam(char *__s) {
+    NOT_IMPL(tmpnam);
+    return 0;
+}
 
-int sprintf(char *__s, const char *__format, ...) { return 0; }
+char *tempnam(const char *__dir, const char *__pfx) {
+    NOT_IMPL(tempnam);
+    return 0;
+}
 
-int vfprintf(FILE *__s, const char *__format, ...) { return 0; }
-int vprintf(const char *__format, ...) { return 0; }
-int vsprintf(char *__s, const char *__format, ...) { return 0; }
+int fclose(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9009, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(fclose);
+    return 0;
+}
 
-int fscanf(FILE *__stream, const char *__format, ...) { return 0; }
+int fflush(FILE *__stream) {
+    NOT_IMPL(fflush);
+    return 0;
+}
 
-int scanf(const char *__format, ...) { return 0; }
+FILE *fopen(const char *path, const char *mode) {
+    if (s_local_access_enabled) {
+        return (void *)ckb_syscall(9003, path, mode, 0, 0, 0, 0);
+    }
+    NOT_IMPL(fopen);
+    return 0;
+}
 
-int sscanf(const char *__s, const char *__format, ...) { return 0; };
+FILE *freopen(const char *path, const char *mode, FILE *stream) {
+    if (s_local_access_enabled) {
+        return (void *)ckb_syscall(9004, path, mode, stream, 0, 0, 0);
+    }
+    NOT_IMPL(freopen);
+    return 0;
+}
 
-int fgetc(FILE *__stream) { return 0; }
+void setbuf(FILE *__stream, char *__buf) { NOT_IMPL(setbuf); }
 
-int getc(FILE *__stream) { return 0; }
+int setvbuf(FILE *__stream, char *__buf, int __modes, size_t __n) {
+    NOT_IMPL(setvbuf);
+    return 0;
+}
 
-int getchar(void) { return 0; }
+int fprintf(FILE *__stream, const char *__format, ...) {
+    NOT_IMPL(fprintf);
+    return 0;
+}
 
-int fputc(int __c, FILE *__stream) { return 0; }
+int sprintf(char *__s, const char *__format, ...) {
+    NOT_IMPL(sprintf);
+    return 0;
+}
 
-int putc(int __c, FILE *__stream) { return 0; }
+int vfprintf(FILE *__s, const char *__format, ...) {
+    NOT_IMPL(vfprintf);
+    return 0;
+}
+int vprintf(const char *__format, ...) {
+    NOT_IMPL(vprintf);
+    return 0;
+}
+int vsprintf(char *__s, const char *__format, ...) {
+    NOT_IMPL(vsprintf);
+    return 0;
+}
 
-int putchar(int __c) { return 0; }
+int fscanf(FILE *__stream, const char *__format, ...) {
+    NOT_IMPL(fscanf);
+    return 0;
+}
 
-char *fgets(char *__s, int __n, FILE *__stream) { return 0; }
+int scanf(const char *__format, ...) {
+    NOT_IMPL(scanf);
+    return 0;
+}
 
-char *gets(char *__s) { return 0; }
+int sscanf(const char *__s, const char *__format, ...) {
+    NOT_IMPL(sscanf);
+    return 0;
+};
 
-int getline(char **__lineptr, size_t *__n, FILE *__stream) { return 0; }
+int fgetc(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(fgetc);
+    return 0;
+}
 
-int fputs(const char *__s, FILE *__stream) { return 0; }
+int getc(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(getc);
+    return 0;
+}
 
-int puts(const char *__s) { return 0; }
+int getchar(void) {
+    NOT_IMPL(getchar);
+    return 0;
+}
 
-int ungetc(int __c, FILE *__stream) { return 0; }
+int fputc(int __c, FILE *__stream) {
+    NOT_IMPL(fputc);
+    return 0;
+}
 
-size_t fread(void *__ptr, size_t __size, size_t __n, FILE *__stream) {
+int putc(int __c, FILE *__stream) {
+    NOT_IMPL(putc);
+    return 0;
+}
+
+int putchar(int __c) {
+    NOT_IMPL(putchar);
+    return 0;
+}
+
+char *fgets(char *__s, int __n, FILE *__stream) {
+    NOT_IMPL(fgets);
+    return 0;
+}
+
+char *gets(char *__s) {
+    NOT_IMPL(gets);
+    return 0;
+}
+
+int getline(char **__lineptr, size_t *__n, FILE *__stream) {
+    NOT_IMPL(getline);
+    return 0;
+}
+
+int fputs(const char *__s, FILE *__stream) {
+    NOT_IMPL(fputs);
+    return 0;
+}
+
+int puts(const char *__s) {
+    NOT_IMPL(puts);
+    return 0;
+}
+
+int ungetc(int __c, FILE *__stream) {
+    NOT_IMPL(ungetc);
+    return 0;
+}
+
+size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9005, ptr, size, nitems, stream, 0, 0);
+    }
+    NOT_IMPL(fread);
     return 0;
 }
 
 size_t fwrite(const void *__ptr, size_t __size, size_t __n, FILE *__s) {
+    NOT_IMPL(fwrite);
     return 0;
 }
 
-int fseek(FILE *__stream, long int __off, int __whence) { return 0; }
+int fseek(FILE *stream, long int offset, int whence) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9011, stream, offset, whence, 0, 0, 0);
+    }
+    NOT_IMPL(fseek);
+    return 0;
+}
 
-long int ftell(FILE *__stream) { return 0; }
+long int ftell(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9010, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(ftell);
+    return 0;
+}
 
-void rewind(FILE *__stream) {}
+void rewind(FILE *__stream) { NOT_IMPL(rewind); }
 
-void clearerr(FILE *__stream) {}
+void clearerr(FILE *__stream) { NOT_IMPL(clearerr); }
 
-int feof(FILE *__stream) { return 0; }
+int feof(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9006, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(feof);
+    return 0;
+}
 
-int ferror(FILE *__stream) { return 0; }
+int ferror(FILE *stream) {
+    if (s_local_access_enabled) {
+        return ckb_syscall(9007, stream, 0, 0, 0, 0, 0);
+    }
+    NOT_IMPL(ferror);
+    return 0;
+}
 
-void perror(const char *__s) {}
+void perror(const char *__s) { NOT_IMPL(perror); }
 
-int fileno(FILE *__stream) { return 0; }
+int fileno(FILE *__stream) {
+    NOT_IMPL(fileno);
+    return 0;
+}
 
-FILE *popen(const char *__command, const char *__modes) { return 0; }
+FILE *popen(const char *__command, const char *__modes) {
+    NOT_IMPL(popen);
+    return 0;
+}
 
-int pclose(FILE *__stream) { return 0; }
+int pclose(FILE *__stream) {
+    NOT_IMPL(pclose);
+    return 0;
+}

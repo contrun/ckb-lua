@@ -112,4 +112,6 @@ FILE *popen(const char *__command, const char *__modes);
 
 int pclose(FILE *__stream);
 
+void enable_local_access(int);
+
 #endif /* <stdio.h> included.  */

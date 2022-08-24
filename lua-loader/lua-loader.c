@@ -19,6 +19,7 @@ int exit(int c) {
     ckb_exit(c);
     return 0;
 }
+void enable_local_access(int b);
 
 void abort() { ckb_exit(-1); }
 
@@ -244,6 +245,7 @@ int read_file(char *buf, int size) {
 }
 
 static int run_from_file(lua_State *L) {
+    enable_local_access(1);
     char buf[1024 * 512];
     int count = read_file(buf, sizeof(buf));
     if (count < 0 || count == sizeof(buf)) {
