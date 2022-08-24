@@ -23,7 +23,7 @@ SYSCFLAGS=
 SYSLDFLAGS=
 SYSLIBS=
 
-MYCFLAGS=-fPIC -fno-builtin -fdata-sections -ffunction-sections -g -Wno-unused-parameter
+MYCFLAGS=-fPIC -fno-builtin -fdata-sections -ffunction-sections -g -Wno-unused-parameter -Wno-int-to-pointer-cast
 MYLDFLAGS=
 MYLIBS=
 MYOBJS=
@@ -221,5 +221,6 @@ lvm.o: lvm.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
  ltable.h lvm.h ljumptab.h
 lzio.o: lzio.c lprefix.h lua.h luaconf.h llimits.h lmem.h lstate.h \
  lobject.h ltm.h lzio.h
+mocked_stdio.o: mocked_stdio.h mocked_stdio.c
 
 # (end of Makefile)

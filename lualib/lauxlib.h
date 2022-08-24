@@ -234,28 +234,17 @@ typedef struct luaL_Stream {
 
 /* print a string */
 #if !defined(lua_writestring)
-// TODO
-#define lua_writestring(s, l) \
-    do {                      \
-        printf("%s", s);      \
-        (void)l;              \
-    } while (0)
+#define lua_writestring(s, l) printf("%s", s)
 #endif
 
 /* print a newline and flush the output */
 #if !defined(lua_writeline)
-// TODO
 #define lua_writeline() (void)0
 #endif
 
 /* print an error message */
 #if !defined(lua_writestringerror)
-// TODO:
-#define lua_writestringerror(s, p) \
-    do {                           \
-        (void)s;                   \
-        (void)p;                   \
-    } while (0)
+#define lua_writestringerror(s, p) printf((s), (p))
 #endif
 
 /* }================================================================== */
