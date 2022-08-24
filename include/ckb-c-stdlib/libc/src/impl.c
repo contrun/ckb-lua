@@ -14,14 +14,14 @@
 
 #include <internal/atomic.h>
 #include <internal/types.h>
+#include <limits.h>
+#include <locale.h>
+#include <math.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <math.h>
-#include <limits.h>
-#include <locale.h>
-#include <setjmp.h>
 
 /*
  * The implementation here is based on musl-libc with modifications for our
@@ -38,18 +38,22 @@ void *memset(void *dest, int c, size_t n) {
    * conditional ensures that all the subsequently used
    * offsets are well-defined and in the dest region. */
 
-  if (!n) return dest;
+  if (!n)
+    return dest;
   s[0] = c;
   s[n - 1] = c;
-  if (n <= 2) return dest;
+  if (n <= 2)
+    return dest;
   s[1] = c;
   s[2] = c;
   s[n - 2] = c;
   s[n - 3] = c;
-  if (n <= 6) return dest;
+  if (n <= 6)
+    return dest;
   s[3] = c;
   s[n - 4] = c;
-  if (n <= 8) return dest;
+  if (n <= 8)
+    return dest;
 
   /* Advance pointer to align it at a 4-byte boundary,
    * and truncate n to a multiple of 4. The previous code
@@ -75,12 +79,14 @@ void *memset(void *dest, int c, size_t n) {
 
   *(u32 *)(s + 0) = c32;
   *(u32 *)(s + n - 4) = c32;
-  if (n <= 8) return dest;
+  if (n <= 8)
+    return dest;
   *(u32 *)(s + 4) = c32;
   *(u32 *)(s + 8) = c32;
   *(u32 *)(s + n - 12) = c32;
   *(u32 *)(s + n - 8) = c32;
-  if (n <= 24) return dest;
+  if (n <= 24)
+    return dest;
   *(u32 *)(s + 12) = c32;
   *(u32 *)(s + 16) = c32;
   *(u32 *)(s + 20) = c32;
@@ -111,11 +117,13 @@ void *memset(void *dest, int c, size_t n) {
   }
 #else
   /* Pure C fallback with no aliasing violations. */
-  for (; n; n--, s++) *s = c;
+  for (; n; n--, s++)
+    *s = c;
 #endif
 
 #else
-  for (; n; n--, s++) *s = c;
+  for (; n; n--, s++)
+    *s = c;
 #endif /* __OPTIMIZE_SIZE__ */
 
   return dest;
@@ -138,7 +146,8 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
   typedef uint32_t __attribute__((__may_alias__)) u32;
   uint32_t w, x;
 
-  for (; (uintptr_t)s % 4 && n; n--) *d++ = *s++;
+  for (; (uintptr_t)s % 4 && n; n--)
+    *d++ = *s++;
 
   if ((uintptr_t)d % 4 == 0) {
     for (; n >= 16; s += 16, d += 16, n -= 16) {
@@ -169,55 +178,56 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     return dest;
   }
 
-  if (n >= 32) switch ((uintptr_t)d % 4) {
-      case 1:
-        w = *(u32 *)s;
-        *d++ = *s++;
-        *d++ = *s++;
-        *d++ = *s++;
-        n -= 3;
-        for (; n >= 17; s += 16, d += 16, n -= 16) {
-          x = *(u32 *)(s + 1);
-          *(u32 *)(d + 0) = (w LS 24) | (x RS 8);
-          w = *(u32 *)(s + 5);
-          *(u32 *)(d + 4) = (x LS 24) | (w RS 8);
-          x = *(u32 *)(s + 9);
-          *(u32 *)(d + 8) = (w LS 24) | (x RS 8);
-          w = *(u32 *)(s + 13);
-          *(u32 *)(d + 12) = (x LS 24) | (w RS 8);
-        }
-        break;
-      case 2:
-        w = *(u32 *)s;
-        *d++ = *s++;
-        *d++ = *s++;
-        n -= 2;
-        for (; n >= 18; s += 16, d += 16, n -= 16) {
-          x = *(u32 *)(s + 2);
-          *(u32 *)(d + 0) = (w LS 16) | (x RS 16);
-          w = *(u32 *)(s + 6);
-          *(u32 *)(d + 4) = (x LS 16) | (w RS 16);
-          x = *(u32 *)(s + 10);
-          *(u32 *)(d + 8) = (w LS 16) | (x RS 16);
-          w = *(u32 *)(s + 14);
-          *(u32 *)(d + 12) = (x LS 16) | (w RS 16);
-        }
-        break;
-      case 3:
-        w = *(u32 *)s;
-        *d++ = *s++;
-        n -= 1;
-        for (; n >= 19; s += 16, d += 16, n -= 16) {
-          x = *(u32 *)(s + 3);
-          *(u32 *)(d + 0) = (w LS 8) | (x RS 24);
-          w = *(u32 *)(s + 7);
-          *(u32 *)(d + 4) = (x LS 8) | (w RS 24);
-          x = *(u32 *)(s + 11);
-          *(u32 *)(d + 8) = (w LS 8) | (x RS 24);
-          w = *(u32 *)(s + 15);
-          *(u32 *)(d + 12) = (x LS 8) | (w RS 24);
-        }
-        break;
+  if (n >= 32)
+    switch ((uintptr_t)d % 4) {
+    case 1:
+      w = *(u32 *)s;
+      *d++ = *s++;
+      *d++ = *s++;
+      *d++ = *s++;
+      n -= 3;
+      for (; n >= 17; s += 16, d += 16, n -= 16) {
+        x = *(u32 *)(s + 1);
+        *(u32 *)(d + 0) = (w LS 24) | (x RS 8);
+        w = *(u32 *)(s + 5);
+        *(u32 *)(d + 4) = (x LS 24) | (w RS 8);
+        x = *(u32 *)(s + 9);
+        *(u32 *)(d + 8) = (w LS 24) | (x RS 8);
+        w = *(u32 *)(s + 13);
+        *(u32 *)(d + 12) = (x LS 24) | (w RS 8);
+      }
+      break;
+    case 2:
+      w = *(u32 *)s;
+      *d++ = *s++;
+      *d++ = *s++;
+      n -= 2;
+      for (; n >= 18; s += 16, d += 16, n -= 16) {
+        x = *(u32 *)(s + 2);
+        *(u32 *)(d + 0) = (w LS 16) | (x RS 16);
+        w = *(u32 *)(s + 6);
+        *(u32 *)(d + 4) = (x LS 16) | (w RS 16);
+        x = *(u32 *)(s + 10);
+        *(u32 *)(d + 8) = (w LS 16) | (x RS 16);
+        w = *(u32 *)(s + 14);
+        *(u32 *)(d + 12) = (x LS 16) | (w RS 16);
+      }
+      break;
+    case 3:
+      w = *(u32 *)s;
+      *d++ = *s++;
+      n -= 1;
+      for (; n >= 19; s += 16, d += 16, n -= 16) {
+        x = *(u32 *)(s + 3);
+        *(u32 *)(d + 0) = (w LS 8) | (x RS 24);
+        w = *(u32 *)(s + 7);
+        *(u32 *)(d + 4) = (x LS 8) | (w RS 24);
+        x = *(u32 *)(s + 11);
+        *(u32 *)(d + 8) = (w LS 8) | (x RS 24);
+        w = *(u32 *)(s + 15);
+        *(u32 *)(d + 12) = (x LS 8) | (w RS 24);
+      }
+      break;
     }
   if (n & 16) {
     *d++ = *s++;
@@ -263,7 +273,8 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
   return dest;
 #endif
 
-  for (; n; n--) *d++ = *s++;
+  for (; n; n--)
+    *d++ = *s++;
   return dest;
 }
 
@@ -283,62 +294,73 @@ void *memmove(void *dest, const void *src, size_t n) {
   char *d = dest;
   const char *s = src;
 
-  if (d == s) return d;
-  if ((uintptr_t)s - (uintptr_t)d - n <= -2 * n) return memcpy(d, s, n);
+  if (d == s)
+    return d;
+  if ((uintptr_t)s - (uintptr_t)d - n <= -2 * n)
+    return memcpy(d, s, n);
 
   if (d < s) {
 #ifdef __GNUC__
     if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
       while ((uintptr_t)d % WS) {
-        if (!n--) return dest;
+        if (!n--)
+          return dest;
         *d++ = *s++;
       }
-      for (; n >= WS; n -= WS, d += WS, s += WS) *(WT *)d = *(WT *)s;
+      for (; n >= WS; n -= WS, d += WS, s += WS)
+        *(WT *)d = *(WT *)s;
     }
 #endif
-    for (; n; n--) *d++ = *s++;
+    for (; n; n--)
+      *d++ = *s++;
   } else {
 #ifdef __GNUC__
     if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
       while ((uintptr_t)(d + n) % WS) {
-        if (!n--) return dest;
+        if (!n--)
+          return dest;
         d[n] = s[n];
       }
-      while (n >= WS) n -= WS, *(WT *)(d + n) = *(WT *)(s + n);
+      while (n >= WS)
+        n -= WS, *(WT *)(d + n) = *(WT *)(s + n);
     }
 #endif
-    while (n) n--, d[n] = s[n];
+    while (n)
+      n--, d[n] = s[n];
   }
 
   return dest;
 }
 
 #define SS (sizeof(size_t))
-#define ALIGN (sizeof(size_t)-1)
-#define ONES ((size_t)-1/UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX/2+1))
-#define HASZERO(x) (((x)-ONES) & ~(x) & HIGHS)
+#define ALIGN (sizeof(size_t) - 1)
+#define ONES ((size_t)-1 / UCHAR_MAX)
+#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
+#define HASZERO(x) (((x)-ONES) & ~(x)&HIGHS)
 
-void *memchr(const void *src, int c, size_t n)
-{
-	const unsigned char *s = src;
-	c = (unsigned char)c;
+void *memchr(const void *src, int c, size_t n) {
+  const unsigned char *s = src;
+  c = (unsigned char)c;
 #ifdef __GNUC__
-	for (; ((uintptr_t)s & ALIGN) && n && *s != c; s++, n--);
-	if (n && *s != c) {
-		typedef size_t __attribute__((__may_alias__)) word;
-		const word *w;
-		size_t k = ONES * c;
-		for (w = (const void *)s; n>=SS && !HASZERO(*w^k); w++, n-=SS);
-		s = (const void *)w;
-	}
+  for (; ((uintptr_t)s & ALIGN) && n && *s != c; s++, n--)
+    ;
+  if (n && *s != c) {
+    typedef size_t __attribute__((__may_alias__)) word;
+    const word *w;
+    size_t k = ONES * c;
+    for (w = (const void *)s; n >= SS && !HASZERO(*w ^ k); w++, n -= SS)
+      ;
+    s = (const void *)w;
+  }
 #endif
-	for (; n && *s != c; s++, n--);
-	return n ? (void *)s : 0;
+  for (; n && *s != c; s++, n--)
+    ;
+  return n ? (void *)s : 0;
 }
 
-#define BITOP(a,b,op) \
- ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
+#define BITOP(a, b, op)                                                        \
+  ((a)[(size_t)(b) / (8 * sizeof *(a))] op(size_t) 1                           \
+   << ((size_t)(b) % (8 * sizeof *(a))))
 
 char *strcpy(char *restrict d, const char *restrict s) {
   char *dest = d;
@@ -361,242 +383,272 @@ int strcmp(const char *l, const char *r) {
 }
 
 char *__strchrnul(const char *s, int c) {
-	c = (unsigned char)c;
-	if (!c) return (char *)s + strlen(s);
+  c = (unsigned char)c;
+  if (!c)
+    return (char *)s + strlen(s);
 
-	for (; *s && *(unsigned char *)s != c; s++);
-	return (char *)s;
+  for (; *s && *(unsigned char *)s != c; s++)
+    ;
+  return (char *)s;
 }
 
 char *strchr(const char *s, int c) {
-	char *r = __strchrnul(s, c);
-	return *(unsigned char *)r == (unsigned char)c ? r : 0;
+  char *r = __strchrnul(s, c);
+  return *(unsigned char *)r == (unsigned char)c ? r : 0;
 }
 
 int strncmp(const char *_l, const char *_r, size_t n) {
-	const unsigned char *l=(void *)_l, *r=(void *)_r;
-	if (!n--) return 0;
-	for (; *l && *r && n && *l == *r ; l++, r++, n--);
-	return *l - *r;
+  const unsigned char *l = (void *)_l, *r = (void *)_r;
+  if (!n--)
+    return 0;
+  for (; *l && *r && n && *l == *r; l++, r++, n--)
+    ;
+  return *l - *r;
 }
 
-size_t strspn(const char *s, const char *c)
-{
-	const char *a = s;
-	size_t byteset[32/sizeof(size_t)] = { 0 };
+size_t strspn(const char *s, const char *c) {
+  const char *a = s;
+  size_t byteset[32 / sizeof(size_t)] = {0};
 
-	if (!c[0]) return 0;
-	if (!c[1]) {
-		for (; *s == *c; s++);
-		return s-a;
-	}
+  if (!c[0])
+    return 0;
+  if (!c[1]) {
+    for (; *s == *c; s++)
+      ;
+    return s - a;
+  }
 
-	for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++);
-	for (; *s && BITOP(byteset, *(unsigned char *)s, &); s++);
-	return s-a;
+  for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++)
+    ;
+  for (; *s && BITOP(byteset, *(unsigned char *)s, &); s++)
+    ;
+  return s - a;
 }
 
-size_t strcspn(const char *s, const char *c)
-{
-	const char *a = s;
-	size_t byteset[32/sizeof(size_t)];
+size_t strcspn(const char *s, const char *c) {
+  const char *a = s;
+  size_t byteset[32 / sizeof(size_t)];
 
-	if (!c[0] || !c[1]) return __strchrnul(s, *c)-a;
+  if (!c[0] || !c[1])
+    return __strchrnul(s, *c) - a;
 
-	memset(byteset, 0, sizeof byteset);
-	for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++);
-	for (; *s && !BITOP(byteset, *(unsigned char *)s, &); s++);
-	return s-a;
+  memset(byteset, 0, sizeof byteset);
+  for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++)
+    ;
+  for (; *s && !BITOP(byteset, *(unsigned char *)s, &); s++)
+    ;
+  return s - a;
 }
 
-char *strpbrk(const char *s, const char *b)
-{
-	s += strcspn(s, b);
-	return *s ? (char *)s : 0;
+char *strpbrk(const char *s, const char *b) {
+  s += strcspn(s, b);
+  return *s ? (char *)s : 0;
 }
 
-static char *twobyte_strstr(const unsigned char *h, const unsigned char *n)
-{
-	uint16_t nw = n[0]<<8 | n[1], hw = h[0]<<8 | h[1];
-	for (h++; *h && hw != nw; hw = hw<<8 | *++h);
-	return *h ? (char *)h-1 : 0;
+static char *twobyte_strstr(const unsigned char *h, const unsigned char *n) {
+  uint16_t nw = n[0] << 8 | n[1], hw = h[0] << 8 | h[1];
+  for (h++; *h && hw != nw; hw = hw << 8 | *++h)
+    ;
+  return *h ? (char *)h - 1 : 0;
 }
 
-static char *threebyte_strstr(const unsigned char *h, const unsigned char *n)
-{
-	uint32_t nw = (uint32_t)n[0]<<24 | n[1]<<16 | n[2]<<8;
-	uint32_t hw = (uint32_t)h[0]<<24 | h[1]<<16 | h[2]<<8;
-	for (h+=2; *h && hw != nw; hw = (hw|*++h)<<8);
-	return *h ? (char *)h-2 : 0;
+static char *threebyte_strstr(const unsigned char *h, const unsigned char *n) {
+  uint32_t nw = (uint32_t)n[0] << 24 | n[1] << 16 | n[2] << 8;
+  uint32_t hw = (uint32_t)h[0] << 24 | h[1] << 16 | h[2] << 8;
+  for (h += 2; *h && hw != nw; hw = (hw | *++h) << 8)
+    ;
+  return *h ? (char *)h - 2 : 0;
 }
 
-static char *fourbyte_strstr(const unsigned char *h, const unsigned char *n)
-{
-	uint32_t nw = (uint32_t)n[0]<<24 | n[1]<<16 | n[2]<<8 | n[3];
-	uint32_t hw = (uint32_t)h[0]<<24 | h[1]<<16 | h[2]<<8 | h[3];
-	for (h+=3; *h && hw != nw; hw = hw<<8 | *++h);
-	return *h ? (char *)h-3 : 0;
+static char *fourbyte_strstr(const unsigned char *h, const unsigned char *n) {
+  uint32_t nw = (uint32_t)n[0] << 24 | n[1] << 16 | n[2] << 8 | n[3];
+  uint32_t hw = (uint32_t)h[0] << 24 | h[1] << 16 | h[2] << 8 | h[3];
+  for (h += 3; *h && hw != nw; hw = hw << 8 | *++h)
+    ;
+  return *h ? (char *)h - 3 : 0;
 }
 
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-#define BITOP(a,b,op) \
- ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
+#define BITOP(a, b, op)                                                        \
+  ((a)[(size_t)(b) / (8 * sizeof *(a))] op(size_t) 1                           \
+   << ((size_t)(b) % (8 * sizeof *(a))))
 
-static char *twoway_strstr(const unsigned char *h, const unsigned char *n)
-{
-	const unsigned char *z;
-	size_t l, ip, jp, k, p, ms, p0, mem, mem0;
-	size_t byteset[32 / sizeof(size_t)] = { 0 };
-	size_t shift[256];
+static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
+  const unsigned char *z;
+  size_t l, ip, jp, k, p, ms, p0, mem, mem0;
+  size_t byteset[32 / sizeof(size_t)] = {0};
+  size_t shift[256];
 
-	/* Computing length of needle and fill shift table */
-	for (l=0; n[l] && h[l]; l++)
-		BITOP(byteset, n[l], |=), shift[n[l]] = l+1;
-	if (n[l]) return 0; /* hit the end of h */
+  /* Computing length of needle and fill shift table */
+  for (l = 0; n[l] && h[l]; l++)
+    BITOP(byteset, n[l], |=), shift[n[l]] = l + 1;
+  if (n[l])
+    return 0; /* hit the end of h */
 
-	/* Compute maximal suffix */
-	ip = -1; jp = 0; k = p = 1;
-	while (jp+k<l) {
-		if (n[ip+k] == n[jp+k]) {
-			if (k == p) {
-				jp += p;
-				k = 1;
-			} else k++;
-		} else if (n[ip+k] > n[jp+k]) {
-			jp += k;
-			k = 1;
-			p = jp - ip;
-		} else {
-			ip = jp++;
-			k = p = 1;
-		}
-	}
-	ms = ip;
-	p0 = p;
+  /* Compute maximal suffix */
+  ip = -1;
+  jp = 0;
+  k = p = 1;
+  while (jp + k < l) {
+    if (n[ip + k] == n[jp + k]) {
+      if (k == p) {
+        jp += p;
+        k = 1;
+      } else
+        k++;
+    } else if (n[ip + k] > n[jp + k]) {
+      jp += k;
+      k = 1;
+      p = jp - ip;
+    } else {
+      ip = jp++;
+      k = p = 1;
+    }
+  }
+  ms = ip;
+  p0 = p;
 
-	/* And with the opposite comparison */
-	ip = -1; jp = 0; k = p = 1;
-	while (jp+k<l) {
-		if (n[ip+k] == n[jp+k]) {
-			if (k == p) {
-				jp += p;
-				k = 1;
-			} else k++;
-		} else if (n[ip+k] < n[jp+k]) {
-			jp += k;
-			k = 1;
-			p = jp - ip;
-		} else {
-			ip = jp++;
-			k = p = 1;
-		}
-	}
-	if (ip+1 > ms+1) ms = ip;
-	else p = p0;
+  /* And with the opposite comparison */
+  ip = -1;
+  jp = 0;
+  k = p = 1;
+  while (jp + k < l) {
+    if (n[ip + k] == n[jp + k]) {
+      if (k == p) {
+        jp += p;
+        k = 1;
+      } else
+        k++;
+    } else if (n[ip + k] < n[jp + k]) {
+      jp += k;
+      k = 1;
+      p = jp - ip;
+    } else {
+      ip = jp++;
+      k = p = 1;
+    }
+  }
+  if (ip + 1 > ms + 1)
+    ms = ip;
+  else
+    p = p0;
 
-	/* Periodic needle? */
-	if (memcmp(n, n+p, ms+1)) {
-		mem0 = 0;
-		p = MAX(ms, l-ms-1) + 1;
-	} else mem0 = l-p;
-	mem = 0;
+  /* Periodic needle? */
+  if (memcmp(n, n + p, ms + 1)) {
+    mem0 = 0;
+    p = MAX(ms, l - ms - 1) + 1;
+  } else
+    mem0 = l - p;
+  mem = 0;
 
-	/* Initialize incremental end-of-haystack pointer */
-	z = h;
+  /* Initialize incremental end-of-haystack pointer */
+  z = h;
 
-	/* Search loop */
-	for (;;) {
-		/* Update incremental end-of-haystack pointer */
-		if (z-h < l) {
-			/* Fast estimate for MAX(l,63) */
-			size_t grow = l | 63;
-			const unsigned char *z2 = memchr(z, 0, grow);
-			if (z2) {
-				z = z2;
-				if (z-h < l) return 0;
-			} else z += grow;
-		}
+  /* Search loop */
+  for (;;) {
+    /* Update incremental end-of-haystack pointer */
+    if (z - h < l) {
+      /* Fast estimate for MAX(l,63) */
+      size_t grow = l | 63;
+      const unsigned char *z2 = memchr(z, 0, grow);
+      if (z2) {
+        z = z2;
+        if (z - h < l)
+          return 0;
+      } else
+        z += grow;
+    }
 
-		/* Check last byte first; advance by shift on mismatch */
-		if (BITOP(byteset, h[l-1], &)) {
-			k = l-shift[h[l-1]];
-			if (k) {
-				if (k < mem) k = mem;
-				h += k;
-				mem = 0;
-				continue;
-			}
-		} else {
-			h += l;
-			mem = 0;
-			continue;
-		}
+    /* Check last byte first; advance by shift on mismatch */
+    if (BITOP(byteset, h[l - 1], &)) {
+      k = l - shift[h[l - 1]];
+      if (k) {
+        if (k < mem)
+          k = mem;
+        h += k;
+        mem = 0;
+        continue;
+      }
+    } else {
+      h += l;
+      mem = 0;
+      continue;
+    }
 
-		/* Compare right half */
-		for (k=MAX(ms+1,mem); n[k] && n[k] == h[k]; k++);
-		if (n[k]) {
-			h += k-ms;
-			mem = 0;
-			continue;
-		}
-		/* Compare left half */
-		for (k=ms+1; k>mem && n[k-1] == h[k-1]; k--);
-		if (k <= mem) return (char *)h;
-		h += p;
-		mem = mem0;
-	}
+    /* Compare right half */
+    for (k = MAX(ms + 1, mem); n[k] && n[k] == h[k]; k++)
+      ;
+    if (n[k]) {
+      h += k - ms;
+      mem = 0;
+      continue;
+    }
+    /* Compare left half */
+    for (k = ms + 1; k > mem && n[k - 1] == h[k - 1]; k--)
+      ;
+    if (k <= mem)
+      return (char *)h;
+    h += p;
+    mem = mem0;
+  }
 }
 
-char *strstr(const char *h, const char *n)
-{
-	/* Return immediately on empty needle */
-	if (!n[0]) return (char *)h;
+char *strstr(const char *h, const char *n) {
+  /* Return immediately on empty needle */
+  if (!n[0])
+    return (char *)h;
 
-	/* Use faster algorithms for short needles */
-	h = strchr(h, *n);
-	if (!h || !n[1]) return (char *)h;
-	if (!h[1]) return 0;
-	if (!n[2]) return twobyte_strstr((void *)h, (void *)n);
-	if (!h[2]) return 0;
-	if (!n[3]) return threebyte_strstr((void *)h, (void *)n);
-	if (!h[3]) return 0;
-	if (!n[4]) return fourbyte_strstr((void *)h, (void *)n);
+  /* Use faster algorithms for short needles */
+  h = strchr(h, *n);
+  if (!h || !n[1])
+    return (char *)h;
+  if (!h[1])
+    return 0;
+  if (!n[2])
+    return twobyte_strstr((void *)h, (void *)n);
+  if (!h[2])
+    return 0;
+  if (!n[3])
+    return threebyte_strstr((void *)h, (void *)n);
+  if (!h[3])
+    return 0;
+  if (!n[4])
+    return fourbyte_strstr((void *)h, (void *)n);
 
-	return twoway_strstr((void *)h, (void *)n);
+  return twoway_strstr((void *)h, (void *)n);
 }
 
 static const struct lconv posix_lconv = {
-        .decimal_point = ".",
-        .thousands_sep = "",
-        .grouping = "",
-        .int_curr_symbol = "",
-        .currency_symbol = "",
-        .mon_decimal_point = "",
-        .mon_thousands_sep = "",
-        .mon_grouping = "",
-        .positive_sign = "",
-        .negative_sign = "",
-        .int_frac_digits = CHAR_MAX,
-        .frac_digits = CHAR_MAX,
-        .p_cs_precedes = CHAR_MAX,
-        .p_sep_by_space = CHAR_MAX,
-        .n_cs_precedes = CHAR_MAX,
-        .n_sep_by_space = CHAR_MAX,
-        .p_sign_posn = CHAR_MAX,
-        .n_sign_posn = CHAR_MAX,
-        .int_p_cs_precedes = CHAR_MAX,
-        .int_p_sep_by_space = CHAR_MAX,
-        .int_n_cs_precedes = CHAR_MAX,
-        .int_n_sep_by_space = CHAR_MAX,
-        .int_p_sign_posn = CHAR_MAX,
-        .int_n_sign_posn = CHAR_MAX,
+    .decimal_point = ".",
+    .thousands_sep = "",
+    .grouping = "",
+    .int_curr_symbol = "",
+    .currency_symbol = "",
+    .mon_decimal_point = "",
+    .mon_thousands_sep = "",
+    .mon_grouping = "",
+    .positive_sign = "",
+    .negative_sign = "",
+    .int_frac_digits = CHAR_MAX,
+    .frac_digits = CHAR_MAX,
+    .p_cs_precedes = CHAR_MAX,
+    .p_sep_by_space = CHAR_MAX,
+    .n_cs_precedes = CHAR_MAX,
+    .n_sep_by_space = CHAR_MAX,
+    .p_sign_posn = CHAR_MAX,
+    .n_sign_posn = CHAR_MAX,
+    .int_p_cs_precedes = CHAR_MAX,
+    .int_p_sep_by_space = CHAR_MAX,
+    .int_n_cs_precedes = CHAR_MAX,
+    .int_n_sep_by_space = CHAR_MAX,
+    .int_p_sign_posn = CHAR_MAX,
+    .int_n_sign_posn = CHAR_MAX,
 };
 
-struct lconv *localeconv(void)
-{
-        return (void *)&posix_lconv;
+struct lconv *localeconv(void) {
+  return (void *)&posix_lconv;
 }
 
 #ifdef CKB_C_STDLIB_MALLOC
@@ -767,7 +819,8 @@ void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
   int pshift = 1;
   int trail;
 
-  if (!size) return;
+  if (!size)
+    return;
 
   head = base;
   high = head + size - width;
@@ -1063,7 +1116,7 @@ static size_t _ntoa_format(out_fct_type out, char *buffer, size_t idx,
     if (negative) {
       buf[len++] = '-';
     } else if (flags & FLAGS_PLUS) {
-      buf[len++] = '+';  // ignore the space if the '+' exists
+      buf[len++] = '+'; // ignore the space if the '+' exists
     } else if (flags & FLAGS_SPACE) {
       buf[len++] = ' ';
     }
@@ -1129,7 +1182,7 @@ static size_t _ntoa_long_long(out_fct_type out, char *buffer, size_t idx,
   return _ntoa_format(out, buffer, idx, maxlen, buf, len, negative,
                       (unsigned int)base, prec, width, flags);
 }
-#endif  // PRINTF_SUPPORT_LONG_LONG
+#endif // PRINTF_SUPPORT_LONG_LONG
 
 // internal vsnprintf
 static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
@@ -1158,34 +1211,34 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
     flags = 0U;
     do {
       switch (*format) {
-        case '0':
-          flags |= FLAGS_ZEROPAD;
-          format++;
-          n = 1U;
-          break;
-        case '-':
-          flags |= FLAGS_LEFT;
-          format++;
-          n = 1U;
-          break;
-        case '+':
-          flags |= FLAGS_PLUS;
-          format++;
-          n = 1U;
-          break;
-        case ' ':
-          flags |= FLAGS_SPACE;
-          format++;
-          n = 1U;
-          break;
-        case '#':
-          flags |= FLAGS_HASH;
-          format++;
-          n = 1U;
-          break;
-        default:
-          n = 0U;
-          break;
+      case '0':
+        flags |= FLAGS_ZEROPAD;
+        format++;
+        n = 1U;
+        break;
+      case '-':
+        flags |= FLAGS_LEFT;
+        format++;
+        n = 1U;
+        break;
+      case '+':
+        flags |= FLAGS_PLUS;
+        format++;
+        n = 1U;
+        break;
+      case ' ':
+        flags |= FLAGS_SPACE;
+        format++;
+        n = 1U;
+        break;
+      case '#':
+        flags |= FLAGS_HASH;
+        format++;
+        n = 1U;
+        break;
+      default:
+        n = 0U;
+        break;
       }
     } while (n);
 
@@ -1196,7 +1249,7 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
     } else if (*format == '*') {
       const int w = va_arg(va, int);
       if (w < 0) {
-        flags |= FLAGS_LEFT;  // reverse padding
+        flags |= FLAGS_LEFT; // reverse padding
         width = (unsigned int)-w;
       } else {
         width = (unsigned int)w;
@@ -1220,207 +1273,202 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
 
     // evaluate length field
     switch (*format) {
-      case 'l':
-        flags |= FLAGS_LONG;
+    case 'l':
+      flags |= FLAGS_LONG;
+      format++;
+      if (*format == 'l') {
+        flags |= FLAGS_LONG_LONG;
         format++;
-        if (*format == 'l') {
-          flags |= FLAGS_LONG_LONG;
-          format++;
-        }
-        break;
-      case 'h':
-        flags |= FLAGS_SHORT;
+      }
+      break;
+    case 'h':
+      flags |= FLAGS_SHORT;
+      format++;
+      if (*format == 'h') {
+        flags |= FLAGS_CHAR;
         format++;
-        if (*format == 'h') {
-          flags |= FLAGS_CHAR;
-          format++;
-        }
-        break;
+      }
+      break;
 #if defined(PRINTF_SUPPORT_PTRDIFF_T)
-      case 't':
-        flags |=
-            (sizeof(ptrdiff_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
-        format++;
-        break;
+    case 't':
+      flags |=
+          (sizeof(ptrdiff_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
+      format++;
+      break;
 #endif
-      case 'j':
-        flags |=
-            (sizeof(uint64_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
-        format++;
-        break;
-      case 'z':
-        flags |=
-            (sizeof(size_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
-        format++;
-        break;
-      default:
-        break;
+    case 'j':
+      flags |=
+          (sizeof(uint64_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
+      format++;
+      break;
+    case 'z':
+      flags |= (sizeof(size_t) == sizeof(long) ? FLAGS_LONG : FLAGS_LONG_LONG);
+      format++;
+      break;
+    default:
+      break;
     }
 
     // evaluate specifier
     switch (*format) {
-      case 'd':
-      case 'i':
-      case 'u':
-      case 'x':
-      case 'X':
-      case 'o':
-      case 'b': {
-        // set the base
-        unsigned int base;
-        if (*format == 'x' || *format == 'X') {
-          base = 16U;
-        } else if (*format == 'o') {
-          base = 8U;
-        } else if (*format == 'b') {
-          base = 2U;
-        } else {
-          base = 10U;
-          flags &= ~FLAGS_HASH;  // no hash for dec format
-        }
-        // uppercase
-        if (*format == 'X') {
-          flags |= FLAGS_UPPERCASE;
-        }
-
-        // no plus or space flag for u, x, X, o, b
-        if ((*format != 'i') && (*format != 'd')) {
-          flags &= ~(FLAGS_PLUS | FLAGS_SPACE);
-        }
-
-        // ignore '0' flag when precision is given
-        if (flags & FLAGS_PRECISION) {
-          flags &= ~FLAGS_ZEROPAD;
-        }
-
-        // convert the integer
-        if ((*format == 'i') || (*format == 'd')) {
-          // signed
-          if (flags & FLAGS_LONG_LONG) {
-#if defined(PRINTF_SUPPORT_LONG_LONG)
-            const long long value = va_arg(va, long long);
-            idx = _ntoa_long_long(
-                out, buffer, idx, maxlen,
-                (unsigned long long)(value > 0 ? value : 0 - value), value < 0,
-                base, precision, width, flags);
-#endif
-          } else if (flags & FLAGS_LONG) {
-            const long value = va_arg(va, long);
-            idx = _ntoa_long(out, buffer, idx, maxlen,
-                             (unsigned long)(value > 0 ? value : 0 - value),
-                             value < 0, base, precision, width, flags);
-          } else {
-            const int value = (flags & FLAGS_CHAR)
-                                  ? (char)va_arg(va, int)
-                                  : (flags & FLAGS_SHORT)
-                                        ? (short int)va_arg(va, int)
-                                        : va_arg(va, int);
-            idx = _ntoa_long(out, buffer, idx, maxlen,
-                             (unsigned int)(value > 0 ? value : 0 - value),
-                             value < 0, base, precision, width, flags);
-          }
-        } else {
-          // unsigned
-          if (flags & FLAGS_LONG_LONG) {
-#if defined(PRINTF_SUPPORT_LONG_LONG)
-            idx = _ntoa_long_long(out, buffer, idx, maxlen,
-                                  va_arg(va, unsigned long long), false, base,
-                                  precision, width, flags);
-#endif
-          } else if (flags & FLAGS_LONG) {
-            idx =
-                _ntoa_long(out, buffer, idx, maxlen, va_arg(va, unsigned long),
-                           false, base, precision, width, flags);
-          } else {
-            const unsigned int value =
-                (flags & FLAGS_CHAR)
-                    ? (unsigned char)va_arg(va, unsigned int)
-                    : (flags & FLAGS_SHORT)
-                          ? (unsigned short int)va_arg(va, unsigned int)
-                          : va_arg(va, unsigned int);
-            idx = _ntoa_long(out, buffer, idx, maxlen, value, false, base,
-                             precision, width, flags);
-          }
-        }
-        format++;
-        break;
+    case 'd':
+    case 'i':
+    case 'u':
+    case 'x':
+    case 'X':
+    case 'o':
+    case 'b': {
+      // set the base
+      unsigned int base;
+      if (*format == 'x' || *format == 'X') {
+        base = 16U;
+      } else if (*format == 'o') {
+        base = 8U;
+      } else if (*format == 'b') {
+        base = 2U;
+      } else {
+        base = 10U;
+        flags &= ~FLAGS_HASH; // no hash for dec format
       }
-      case 'c': {
-        unsigned int l = 1U;
-        // pre padding
-        if (!(flags & FLAGS_LEFT)) {
-          while (l++ < width) {
-            out(' ', buffer, idx++, maxlen);
-          }
-        }
-        // char output
-        out((char)va_arg(va, int), buffer, idx++, maxlen);
-        // post padding
-        if (flags & FLAGS_LEFT) {
-          while (l++ < width) {
-            out(' ', buffer, idx++, maxlen);
-          }
-        }
-        format++;
-        break;
+      // uppercase
+      if (*format == 'X') {
+        flags |= FLAGS_UPPERCASE;
       }
 
-      case 's': {
-        const char *p = va_arg(va, char *);
-        unsigned int l = _strnlen_s(p, precision ? precision : (size_t)-1);
-        // pre padding
-        if (flags & FLAGS_PRECISION) {
-          l = (l < precision ? l : precision);
-        }
-        if (!(flags & FLAGS_LEFT)) {
-          while (l++ < width) {
-            out(' ', buffer, idx++, maxlen);
-          }
-        }
-        // string output
-        while ((*p != 0) && (!(flags & FLAGS_PRECISION) || precision--)) {
-          out(*(p++), buffer, idx++, maxlen);
-        }
-        // post padding
-        if (flags & FLAGS_LEFT) {
-          while (l++ < width) {
-            out(' ', buffer, idx++, maxlen);
-          }
-        }
-        format++;
-        break;
+      // no plus or space flag for u, x, X, o, b
+      if ((*format != 'i') && (*format != 'd')) {
+        flags &= ~(FLAGS_PLUS | FLAGS_SPACE);
       }
 
-      case 'p': {
-        width = sizeof(void *) * 2U;
-        flags |= FLAGS_ZEROPAD | FLAGS_UPPERCASE;
+      // ignore '0' flag when precision is given
+      if (flags & FLAGS_PRECISION) {
+        flags &= ~FLAGS_ZEROPAD;
+      }
+
+      // convert the integer
+      if ((*format == 'i') || (*format == 'd')) {
+        // signed
+        if (flags & FLAGS_LONG_LONG) {
 #if defined(PRINTF_SUPPORT_LONG_LONG)
-        const bool is_ll = sizeof(uintptr_t) == sizeof(long long);
-        if (is_ll) {
-          idx = _ntoa_long_long(out, buffer, idx, maxlen,
-                                (uintptr_t)va_arg(va, void *), false, 16U,
-                                precision, width, flags);
-        } else {
+          const long long value = va_arg(va, long long);
+          idx = _ntoa_long_long(
+              out, buffer, idx, maxlen,
+              (unsigned long long)(value > 0 ? value : 0 - value), value < 0,
+              base, precision, width, flags);
 #endif
+        } else if (flags & FLAGS_LONG) {
+          const long value = va_arg(va, long);
           idx = _ntoa_long(out, buffer, idx, maxlen,
-                           (unsigned long)((uintptr_t)va_arg(va, void *)),
-                           false, 16U, precision, width, flags);
-#if defined(PRINTF_SUPPORT_LONG_LONG)
+                           (unsigned long)(value > 0 ? value : 0 - value),
+                           value < 0, base, precision, width, flags);
+        } else {
+          const int value = (flags & FLAGS_CHAR)    ? (char)va_arg(va, int)
+                            : (flags & FLAGS_SHORT) ? (short int)va_arg(va, int)
+                                                    : va_arg(va, int);
+          idx = _ntoa_long(out, buffer, idx, maxlen,
+                           (unsigned int)(value > 0 ? value : 0 - value),
+                           value < 0, base, precision, width, flags);
         }
+      } else {
+        // unsigned
+        if (flags & FLAGS_LONG_LONG) {
+#if defined(PRINTF_SUPPORT_LONG_LONG)
+          idx = _ntoa_long_long(out, buffer, idx, maxlen,
+                                va_arg(va, unsigned long long), false, base,
+                                precision, width, flags);
 #endif
-        format++;
-        break;
+        } else if (flags & FLAGS_LONG) {
+          idx = _ntoa_long(out, buffer, idx, maxlen, va_arg(va, unsigned long),
+                           false, base, precision, width, flags);
+        } else {
+          const unsigned int value =
+              (flags & FLAGS_CHAR) ? (unsigned char)va_arg(va, unsigned int)
+              : (flags & FLAGS_SHORT)
+                  ? (unsigned short int)va_arg(va, unsigned int)
+                  : va_arg(va, unsigned int);
+          idx = _ntoa_long(out, buffer, idx, maxlen, value, false, base,
+                           precision, width, flags);
+        }
       }
+      format++;
+      break;
+    }
+    case 'c': {
+      unsigned int l = 1U;
+      // pre padding
+      if (!(flags & FLAGS_LEFT)) {
+        while (l++ < width) {
+          out(' ', buffer, idx++, maxlen);
+        }
+      }
+      // char output
+      out((char)va_arg(va, int), buffer, idx++, maxlen);
+      // post padding
+      if (flags & FLAGS_LEFT) {
+        while (l++ < width) {
+          out(' ', buffer, idx++, maxlen);
+        }
+      }
+      format++;
+      break;
+    }
 
-      case '%':
-        out('%', buffer, idx++, maxlen);
-        format++;
-        break;
+    case 's': {
+      const char *p = va_arg(va, char *);
+      unsigned int l = _strnlen_s(p, precision ? precision : (size_t)-1);
+      // pre padding
+      if (flags & FLAGS_PRECISION) {
+        l = (l < precision ? l : precision);
+      }
+      if (!(flags & FLAGS_LEFT)) {
+        while (l++ < width) {
+          out(' ', buffer, idx++, maxlen);
+        }
+      }
+      // string output
+      while ((*p != 0) && (!(flags & FLAGS_PRECISION) || precision--)) {
+        out(*(p++), buffer, idx++, maxlen);
+      }
+      // post padding
+      if (flags & FLAGS_LEFT) {
+        while (l++ < width) {
+          out(' ', buffer, idx++, maxlen);
+        }
+      }
+      format++;
+      break;
+    }
 
-      default:
-        out(*format, buffer, idx++, maxlen);
-        format++;
-        break;
+    case 'p': {
+      width = sizeof(void *) * 2U;
+      flags |= FLAGS_ZEROPAD | FLAGS_UPPERCASE;
+#if defined(PRINTF_SUPPORT_LONG_LONG)
+      const bool is_ll = sizeof(uintptr_t) == sizeof(long long);
+      if (is_ll) {
+        idx = _ntoa_long_long(out, buffer, idx, maxlen,
+                              (uintptr_t)va_arg(va, void *), false, 16U,
+                              precision, width, flags);
+      } else {
+#endif
+        idx = _ntoa_long(out, buffer, idx, maxlen,
+                         (unsigned long)((uintptr_t)va_arg(va, void *)), false,
+                         16U, precision, width, flags);
+#if defined(PRINTF_SUPPORT_LONG_LONG)
+      }
+#endif
+      format++;
+      break;
+    }
+
+    case '%':
+      out('%', buffer, idx++, maxlen);
+      format++;
+      break;
+
+    default:
+      out(*format, buffer, idx++, maxlen);
+      format++;
+      break;
     }
   }
 
@@ -1492,9 +1540,13 @@ int ckb_printf(const char *format, ...) { return 0; }
 
 #endif /* CKB_C_STDLIB_PRINTF */
 
-/* Copied from https://github.com/bminor/musl/blob/46d1c7801bb509e1097e8fadbaf359367fa4ef0b/src/setjmp/riscv64/setjmp.S */
-/* We need to use inline asm for easier compilation, https://stackoverflow.com/a/42358235. */
-/* We need __attribute__((naked)) to remove prolog and epilog, https://stackoverflow.com/a/42637729 */
+/* Copied from
+ * https://github.com/bminor/musl/blob/46d1c7801bb509e1097e8fadbaf359367fa4ef0b/src/setjmp/riscv64/setjmp.S
+ */
+/* We need to use inline asm for easier compilation,
+ * https://stackoverflow.com/a/42358235. */
+/* We need __attribute__((naked)) to remove prolog and epilog,
+ * https://stackoverflow.com/a/42637729 */
 int setjmp(jmp_buf b) {
   asm volatile("sd s0,    0(a0)\n"
                "sd s1,    8(a0)\n"
@@ -1511,8 +1563,7 @@ int setjmp(jmp_buf b) {
                "sd sp,    96(a0)\n"
                "sd ra,    104(a0)\n"
                "li a0, 0\n"
-               "ret\n"
-               );
+               "ret\n");
 }
 
 int _setjmp(jmp_buf b) {
@@ -1531,8 +1582,7 @@ int _setjmp(jmp_buf b) {
                "sd sp,    96(a0)\n"
                "sd ra,    104(a0)\n"
                "li a0, 0\n"
-               "ret\n"
-               );
+               "ret\n");
 }
 
 void longjmp(jmp_buf b, int n) {
@@ -1552,8 +1602,7 @@ void longjmp(jmp_buf b, int n) {
                "ld ra,    104(a0)\n"
                "seqz a0, a1\n"
                "add a0, a0, a1\n"
-               "ret\n"
-               );
+               "ret\n");
 }
 
 void _longjmp(jmp_buf b, int n) {
@@ -1573,493 +1622,571 @@ void _longjmp(jmp_buf b, int n) {
                "ld ra,    104(a0)\n"
                "seqz a0, a1\n"
                "add a0, a0, a1\n"
-               "ret\n"
-               );
+               "ret\n");
 }
 
-int abs(int a)
-{
-  return a>0 ? a : -a;
+int abs(int a) { return a > 0 ? a : -a; }
+
+double frexp(double x, int *e) {
+  union {
+    double d;
+    uint64_t i;
+  } y = {x};
+  int ee = y.i >> 52 & 0x7ff;
+
+  if (!ee) {
+    if (x) {
+      x = frexp(x * 0x1p64, e);
+      *e -= 64;
+    } else
+      *e = 0;
+    return x;
+  } else if (ee == 0x7ff) {
+    return x;
+  }
+
+  *e = ee - 0x3fe;
+  y.i &= 0x800fffffffffffffull;
+  y.i |= 0x3fe0000000000000ull;
+  return y.d;
 }
 
-double frexp(double x, int *e)
-{
-	union { double d; uint64_t i; } y = { x };
-	int ee = y.i>>52 & 0x7ff;
+double fmod(double x, double y) {
+  union {
+    double f;
+    uint64_t i;
+  } ux = {x}, uy = {y};
+  int ex = ux.i >> 52 & 0x7ff;
+  int ey = uy.i >> 52 & 0x7ff;
+  int sx = ux.i >> 63;
+  uint64_t i;
 
-	if (!ee) {
-		if (x) {
-			x = frexp(x*0x1p64, e);
-			*e -= 64;
-		} else *e = 0;
-		return x;
-	} else if (ee == 0x7ff) {
-		return x;
-	}
+  /* in the followings uxi should be ux.i, but then gcc wrongly adds */
+  /* float load/store to inner loops ruining performance and code size */
+  uint64_t uxi = ux.i;
 
-	*e = ee - 0x3fe;
-	y.i &= 0x800fffffffffffffull;
-	y.i |= 0x3fe0000000000000ull;
-	return y.d;
+  if (uy.i << 1 == 0 || __builtin_isnan(y) || ex == 0x7ff)
+    return (x * y) / (x * y);
+  if (uxi << 1 <= uy.i << 1) {
+    if (uxi << 1 == uy.i << 1)
+      return 0 * x;
+    return x;
+  }
+
+  /* normalize x and y */
+  if (!ex) {
+    for (i = uxi << 12; i >> 63 == 0; ex--, i <<= 1)
+      ;
+    uxi <<= -ex + 1;
+  } else {
+    uxi &= -1ULL >> 12;
+    uxi |= 1ULL << 52;
+  }
+  if (!ey) {
+    for (i = uy.i << 12; i >> 63 == 0; ey--, i <<= 1)
+      ;
+    uy.i <<= -ey + 1;
+  } else {
+    uy.i &= -1ULL >> 12;
+    uy.i |= 1ULL << 52;
+  }
+
+  /* x mod y */
+  for (; ex > ey; ex--) {
+    i = uxi - uy.i;
+    if (i >> 63 == 0) {
+      if (i == 0)
+        return 0 * x;
+      uxi = i;
+    }
+    uxi <<= 1;
+  }
+  i = uxi - uy.i;
+  if (i >> 63 == 0) {
+    if (i == 0)
+      return 0 * x;
+    uxi = i;
+  }
+  for (; uxi >> 52 == 0; uxi <<= 1, ex--)
+    ;
+
+  /* scale result */
+  if (ex > 0) {
+    uxi -= 1ULL << 52;
+    uxi |= (uint64_t)ex << 52;
+  } else {
+    uxi >>= -ex + 1;
+  }
+  uxi |= (uint64_t)sx << 63;
+  ux.i = uxi;
+  return ux.f;
 }
 
-double fmod(double x, double y)
-{
-	union {double f; uint64_t i;} ux = {x}, uy = {y};
-	int ex = ux.i>>52 & 0x7ff;
-	int ey = uy.i>>52 & 0x7ff;
-	int sx = ux.i>>63;
-	uint64_t i;
+double scalbn(double x, int n) {
+  union {
+    double f;
+    uint64_t i;
+  } u;
+  double y = x;
 
-	/* in the followings uxi should be ux.i, but then gcc wrongly adds */
-	/* float load/store to inner loops ruining performance and code size */
-	uint64_t uxi = ux.i;
-
-	if (uy.i<<1 == 0 || __builtin_isnan(y) || ex == 0x7ff)
-		return (x*y)/(x*y);
-	if (uxi<<1 <= uy.i<<1) {
-		if (uxi<<1 == uy.i<<1)
-			return 0*x;
-		return x;
-	}
-
-	/* normalize x and y */
-	if (!ex) {
-		for (i = uxi<<12; i>>63 == 0; ex--, i <<= 1);
-		uxi <<= -ex + 1;
-	} else {
-		uxi &= -1ULL >> 12;
-		uxi |= 1ULL << 52;
-	}
-	if (!ey) {
-		for (i = uy.i<<12; i>>63 == 0; ey--, i <<= 1);
-		uy.i <<= -ey + 1;
-	} else {
-		uy.i &= -1ULL >> 12;
-		uy.i |= 1ULL << 52;
-	}
-
-	/* x mod y */
-	for (; ex > ey; ex--) {
-		i = uxi - uy.i;
-		if (i >> 63 == 0) {
-			if (i == 0)
-				return 0*x;
-			uxi = i;
-		}
-		uxi <<= 1;
-	}
-	i = uxi - uy.i;
-	if (i >> 63 == 0) {
-		if (i == 0)
-			return 0*x;
-		uxi = i;
-	}
-	for (; uxi>>52 == 0; uxi <<= 1, ex--);
-
-	/* scale result */
-	if (ex > 0) {
-		uxi -= 1ULL << 52;
-		uxi |= (uint64_t)ex << 52;
-	} else {
-		uxi >>= -ex + 1;
-	}
-	uxi |= (uint64_t)sx << 63;
-	ux.i = uxi;
-	return ux.f;
+  if (n > 1023) {
+    y *= 0x1p1023;
+    n -= 1023;
+    if (n > 1023) {
+      y *= 0x1p1023;
+      n -= 1023;
+      if (n > 1023)
+        n = 1023;
+    }
+  } else if (n < -1022) {
+    /* make sure final n < -53 to avoid double
+       rounding in the subnormal range */
+    y *= 0x1p-1022 * 0x1p53;
+    n += 1022 - 53;
+    if (n < -1022) {
+      y *= 0x1p-1022 * 0x1p53;
+      n += 1022 - 53;
+      if (n < -1022)
+        n = -1022;
+    }
+  }
+  u.i = (uint64_t)(0x3ff + n) << 52;
+  x = y * u.f;
+  return x;
 }
 
-double scalbn(double x, int n)
-{
-	union {double f; uint64_t i;} u;
-	double y = x;
+double ldexp(double x, int n) { return scalbn(x, n); }
 
-	if (n > 1023) {
-		y *= 0x1p1023;
-		n -= 1023;
-		if (n > 1023) {
-			y *= 0x1p1023;
-			n -= 1023;
-			if (n > 1023)
-				n = 1023;
-		}
-	} else if (n < -1022) {
-		/* make sure final n < -53 to avoid double
-		   rounding in the subnormal range */
-		y *= 0x1p-1022 * 0x1p53;
-		n += 1022 - 53;
-		if (n < -1022) {
-			y *= 0x1p-1022 * 0x1p53;
-			n += 1022 - 53;
-			if (n < -1022)
-				n = -1022;
-		}
-	}
-	u.i = (uint64_t)(0x3ff+n)<<52;
-	x = y * u.f;
-	return x;
+double floor(double x) {
+#define EPS DBL_EPSILON
+  static const double toint = 1 / EPS;
+  union {
+    double f;
+    uint64_t i;
+  } u = {x};
+  int e = u.i >> 52 & 0x7ff;
+  double y;
+
+  if (e >= 0x3ff + 52 || x == 0)
+    return x;
+  /* y = int(x) - x, where int(x) is an integer neighbor of x */
+  if (u.i >> 63)
+    y = x - toint + toint - x;
+  else
+    y = x + toint - toint - x;
+  /* special case because of non-nearest rounding modes */
+  if (e <= 0x3ff - 1) {
+    FORCE_EVAL(y);
+    return u.i >> 63 ? -1 : 0;
+  }
+  if (y > 0)
+    return x + y - 1;
+  return x + y;
 }
 
-double ldexp(double x, int n)
-{
-	return scalbn(x, n);
-}
+int strcoll(const char *l, const char *r) { return strcmp(l, r); }
 
-double floor(double x)
-{
-  #define EPS DBL_EPSILON
-  static const double toint = 1/EPS;
-	union {double f; uint64_t i;} u = {x};
-	int e = u.i >> 52 & 0x7ff;
-	double y;
-
-	if (e >= 0x3ff+52 || x == 0)
-		return x;
-	/* y = int(x) - x, where int(x) is an integer neighbor of x */
-	if (u.i >> 63)
-		y = x - toint + toint - x;
-	else
-		y = x + toint - toint - x;
-	/* special case because of non-nearest rounding modes */
-	if (e <= 0x3ff-1) {
-		FORCE_EVAL(y);
-		return u.i >> 63 ? -1 : 0;
-	}
-	if (y > 0)
-		return x + y - 1;
-	return x + y;
-}
-
-int strcoll (const char *l, const char *r) {
-  return strcmp(l, r);
-}
-
-int *__errno_location(void)
-{
+int *__errno_location(void) {
   static int error = -1;
   return &error;
 }
 
-char *strerror(int e)
-{
-  static char* errorstr = "There is an error";
+char *strerror(int e) {
+  static char *errorstr = "There is an error";
   return errorstr;
 }
 
-int islower(int c)
-{
-	return (unsigned)c-'a' < 26;
+int islower(int c) { return (unsigned)c - 'a' < 26; }
+
+int isupper(int c) { return (unsigned)c - 'A' < 26; }
+
+int tolower(int c) {
+  if (isupper(c))
+    return c | 32;
+  return c;
 }
 
-int isupper(int c)
-{
-	return (unsigned)c-'A' < 26;
+int toupper(int c) {
+  if (islower(c))
+    return c & 0x5f;
+  return c;
 }
 
-int tolower(int c)
-{
-	if (isupper(c)) return c | 32;
-	return c;
-}
+#define X(x) (((x) / 256 | (x)*256) % 65536)
 
-int toupper(int c)
-{
-	if (islower(c)) return c & 0x5f;
-	return c;
-}
-
-#define X(x) (((x)/256 | (x)*256) % 65536)
-
-const unsigned short **__ctype_b_loc(void)
-{
+const unsigned short **__ctype_b_loc(void) {
   static const unsigned short table[] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),
-  X(0x200),X(0x320),X(0x220),X(0x220),X(0x220),X(0x220),X(0x200),X(0x200),
-  X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),
-  X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),X(0x200),
-  X(0x160),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),
-  X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),
-  X(0x8d8),X(0x8d8),X(0x8d8),X(0x8d8),X(0x8d8),X(0x8d8),X(0x8d8),X(0x8d8),
-  X(0x8d8),X(0x8d8),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),
-  X(0x4c0),X(0x8d5),X(0x8d5),X(0x8d5),X(0x8d5),X(0x8d5),X(0x8d5),X(0x8c5),
-  X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),
-  X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),X(0x8c5),
-  X(0x8c5),X(0x8c5),X(0x8c5),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),
-  X(0x4c0),X(0x8d6),X(0x8d6),X(0x8d6),X(0x8d6),X(0x8d6),X(0x8d6),X(0x8c6),
-  X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),
-  X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),X(0x8c6),
-  X(0x8c6),X(0x8c6),X(0x8c6),X(0x4c0),X(0x4c0),X(0x4c0),X(0x4c0),X(0x200),
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        X(0x200), X(0x200), X(0x200), X(0x200), X(0x200),
+      X(0x200), X(0x200), X(0x200), X(0x200), X(0x320), X(0x220), X(0x220),
+      X(0x220), X(0x220), X(0x200), X(0x200), X(0x200), X(0x200), X(0x200),
+      X(0x200), X(0x200), X(0x200), X(0x200), X(0x200), X(0x200), X(0x200),
+      X(0x200), X(0x200), X(0x200), X(0x200), X(0x200), X(0x200), X(0x160),
+      X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0),
+      X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0),
+      X(0x4c0), X(0x8d8), X(0x8d8), X(0x8d8), X(0x8d8), X(0x8d8), X(0x8d8),
+      X(0x8d8), X(0x8d8), X(0x8d8), X(0x8d8), X(0x4c0), X(0x4c0), X(0x4c0),
+      X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x8d5), X(0x8d5), X(0x8d5),
+      X(0x8d5), X(0x8d5), X(0x8d5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5),
+      X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5),
+      X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5), X(0x8c5),
+      X(0x8c5), X(0x8c5), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0), X(0x4c0),
+      X(0x4c0), X(0x8d6), X(0x8d6), X(0x8d6), X(0x8d6), X(0x8d6), X(0x8d6),
+      X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6),
+      X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6),
+      X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x8c6), X(0x4c0),
+      X(0x4c0), X(0x4c0), X(0x4c0), X(0x200), 0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,        0,
+      0,        0,        0,        0,        0,        0,
   };
 
-  static const unsigned short *const ptable = table+128;
+  static const unsigned short *const ptable = table + 128;
   return (void *)&ptable;
 }
 
-const int32_t **__ctype_toupper_loc(void)
-{
+const int32_t **__ctype_toupper_loc(void) {
   static const int32_t table[] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-  16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-  32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-  48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
-  64,
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-  91,92,93,94,95,96,
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-  123,124,125,126,127,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   2,   3,   4,   5,   6,
+      7,   8,   9,   10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,
+      22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,
+      37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,
+      52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  'A', 'B',
+      'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+      'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 91,  92,  93,  94,  95,  96,
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+      'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 123, 124, 125, 126,
+      127, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,
   };
 
-  static const int32_t *const ptable = table+128;
+  static const int32_t *const ptable = table + 128;
 
   return (void *)&ptable;
 }
 
-const int32_t **__ctype_tolower_loc(void)
-{
+const int32_t **__ctype_tolower_loc(void) {
   static const int32_t table[] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-  16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-  32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-  48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
-  64,
-  'a','b','c','d','e','f','g','h','i','j','k','l','m',
-  'n','o','p','q','r','s','t','u','v','w','x','y','z',
-  91,92,93,94,95,96,
-  'a','b','c','d','e','f','g','h','i','j','k','l','m',
-  'n','o','p','q','r','s','t','u','v','w','x','y','z',
-  123,124,125,126,127,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   2,   3,   4,   5,   6,
+      7,   8,   9,   10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,
+      22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,
+      37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,
+      52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  'a', 'b',
+      'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+      'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 91,  92,  93,  94,  95,  96,
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+      'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 123, 124, 125, 126,
+      127, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,
   };
 
-  static const int32_t *const ptable = table+128;
+  static const int32_t *const ptable = table + 128;
 
   return (void *)&ptable;
 }
 
-char *getenv(const char *name)
-{
-	return 0;
-}
+char *getenv(const char *name) { return 0; }
 
-int isspace(int c)
-{
-    return c == ' ' || (unsigned)c-'\t' < 5;
-}
-
+int isspace(int c) { return c == ' ' || (unsigned)c - '\t' < 5; }
 
 // Copied from dietlibc
-float strtof(const char* s, char** endptr) {
-    register const char*  p     = s;
-    register float        value = 0.;
-    int                   sign  = +1;
-    float                 factor;
-    unsigned int          expo;
+float strtof(const char *s, char **endptr) {
+  register const char *p = s;
+  register float value = 0.;
+  int sign = +1;
+  float factor;
+  unsigned int expo;
 
-    while ( isspace(*p) )
-        p++;
+  while (isspace(*p))
+    p++;
 
-    switch (*p) {
-    case '-': sign = -1;	/* fall through */
-    case '+': p++;
-    default : break;
+  switch (*p) {
+  case '-':
+    sign = -1; /* fall through */
+  case '+':
+    p++;
+  default:
+    break;
+  }
+
+  while ((unsigned int)(*p - '0') < 10u)
+    value = value * 10 + (*p++ - '0');
+
+  if (*p == '.') {
+    factor = 1.;
+
+    p++;
+    while ((unsigned int)(*p - '0') < 10u) {
+      factor *= 0.1;
+      value += (*p++ - '0') * factor;
+    }
+  }
+
+  if ((*p | 32) == 'e') {
+    expo = 0;
+    factor = 10.L;
+
+    switch (*++p) { // ja hier weiß ich nicht, was mindestens nach einem 'E'
+                    // folgenden MUSS.
+    case '-':
+      factor = 0.1; /* fall through */
+    case '+':
+      p++;
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      break;
+    default:
+      value = 0.L;
+      p = s;
+      goto done;
     }
 
-    while ( (unsigned int)(*p - '0') < 10u )
-        value = value*10 + (*p++ - '0');
+    while ((unsigned int)(*p - '0') < 10u)
+      expo = 10 * expo + (*p++ - '0');
 
-    if ( *p == '.' ) {
-        factor = 1.;
-
-        p++;
-        while ( (unsigned int)(*p - '0') < 10u ) {
-            factor *= 0.1;
-            value  += (*p++ - '0') * factor;
-        }
+    while (1) {
+      if (expo & 1)
+        value *= factor;
+      if ((expo >>= 1) == 0)
+        break;
+      factor *= factor;
     }
-
-    if ( (*p | 32) == 'e' ) {
-        expo   = 0;
-        factor = 10.L;
-
-        switch (*++p) {                 // ja hier weiß ich nicht, was mindestens nach einem 'E' folgenden MUSS.
-        case '-': factor = 0.1;	/* fall through */
-        case '+': p++;
-                  break;
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                  break;
-        default : value = 0.L;
-                  p     = s;
-                  goto done;
-        }
-
-        while ( (unsigned int)(*p - '0') < 10u )
-            expo = 10 * expo + (*p++ - '0');
-
-        while ( 1 ) {
-            if ( expo & 1 )
-                value *= factor;
-            if ( (expo >>= 1) == 0 )
-                break;
-            factor *= factor;
-        }
-    }
+  }
 
 done:
-    if ( endptr != NULL )
-        *endptr = (char*)p;
+  if (endptr != NULL)
+    *endptr = (char *)p;
 
-    return value * sign;
+  return value * sign;
 }
 
 #define ldbltype long double
-double strtod(const char* s, char** endptr) {
-    register const char*  p     = s;
-    register ldbltype     value = 0.;
-    int                   sign  = +1;
-    ldbltype              factor;
-    unsigned int          expo;
+double strtod(const char *s, char **endptr) {
+  register const char *p = s;
+  register ldbltype value = 0.;
+  int sign = +1;
+  ldbltype factor;
+  unsigned int expo;
 
-    while ( isspace(*p) )
-        p++;
+  while (isspace(*p))
+    p++;
 
-    switch (*p) {
-    case '-': sign = -1;	/* fall through */
-    case '+': p++;
-    default : break;
+  switch (*p) {
+  case '-':
+    sign = -1; /* fall through */
+  case '+':
+    p++;
+  default:
+    break;
+  }
+
+  while ((unsigned int)(*p - '0') < 10u)
+    value = value * 10 + (*p++ - '0');
+
+  if (*p == '.') {
+    factor = 1.;
+
+    p++;
+    while ((unsigned int)(*p - '0') < 10u) {
+      factor *= 0.1;
+      value += (*p++ - '0') * factor;
+    }
+  }
+
+  if ((*p | 32) == 'e') {
+    expo = 0;
+    factor = 10.;
+
+    switch (*++p) { // ja hier weiß ich nicht, was mindestens nach einem 'E'
+                    // folgenden MUSS.
+    case '-':
+      factor = 0.1; /* fall through */
+    case '+':
+      p++;
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      break;
+    default:
+      value = 0.;
+      p = s;
+      goto done;
     }
 
-    while ( (unsigned int)(*p - '0') < 10u )
-        value = value*10 + (*p++ - '0');
+    while ((unsigned int)(*p - '0') < 10u)
+      expo = 10 * expo + (*p++ - '0');
 
-    if ( *p == '.' ) {
-        factor = 1.;
-
-        p++;
-        while ( (unsigned int)(*p - '0') < 10u ) {
-            factor *= 0.1;
-            value  += (*p++ - '0') * factor;
-        }
+    while (1) {
+      if (expo & 1)
+        value *= factor;
+      if ((expo >>= 1) == 0)
+        break;
+      factor *= factor;
     }
-
-    if ( (*p | 32) == 'e' ) {
-        expo   = 0;
-        factor = 10.;
-
-        switch (*++p) {                 // ja hier weiß ich nicht, was mindestens nach einem 'E' folgenden MUSS.
-        case '-': factor = 0.1;	/* fall through */
-        case '+': p++;
-                  break;
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                  break;
-        default : value = 0.;
-                  p     = s;
-                  goto done;
-        }
-
-        while ( (unsigned int)(*p - '0') < 10u )
-            expo = 10 * expo + (*p++ - '0');
-
-        while ( 1 ) {
-            if ( expo & 1 )
-                value *= factor;
-            if ( (expo >>= 1) == 0 )
-                break;
-            factor *= factor;
-        }
-    }
+  }
 
 done:
-    if ( endptr != NULL )
-        *endptr = (char*)p;
+  if (endptr != NULL)
+    *endptr = (char *)p;
 
-    return value * sign;
+  return value * sign;
 }
 
-long double strtold(const char* s, char** endptr) {
-    register const char*  p     = s;
-    register long double  value = 0.L;
-    int                   sign  = +1;
-    long double           factor;
-    unsigned int          expo;
+long double strtold(const char *s, char **endptr) {
+  register const char *p = s;
+  register long double value = 0.L;
+  int sign = +1;
+  long double factor;
+  unsigned int expo;
 
-    while ( isspace(*p) )
-        p++;
+  while (isspace(*p))
+    p++;
 
-    switch (*p) {
-    case '-': sign = -1;	/* fall through */
-    case '+': p++;
-    default : break;
+  switch (*p) {
+  case '-':
+    sign = -1; /* fall through */
+  case '+':
+    p++;
+  default:
+    break;
+  }
+
+  while ((unsigned int)(*p - '0') < 10u)
+    value = value * 10 + (*p++ - '0');
+
+  if (*p == '.') {
+    factor = 1.;
+
+    p++;
+    while ((unsigned int)(*p - '0') < 10u) {
+      factor *= 0.1;
+      value += (*p++ - '0') * factor;
+    }
+  }
+
+  if ((*p | 32) == 'e') {
+    expo = 0;
+    factor = 10.L;
+
+    switch (*++p) { // ja hier weiß ich nicht, was mindestens nach einem 'E'
+                    // folgenden MUSS.
+    case '-':
+      factor = 0.1; /* fall through */
+    case '+':
+      p++;
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      break;
+    default:
+      value = 0.L;
+      p = s;
+      goto done;
     }
 
-    while ( (unsigned int)(*p - '0') < 10u )
-        value = value*10 + (*p++ - '0');
+    while ((unsigned int)(*p - '0') < 10u)
+      expo = 10 * expo + (*p++ - '0');
 
-    if ( *p == '.' ) {
-        factor = 1.;
-
-        p++;
-        while ( (unsigned int)(*p - '0') < 10u ) {
-            factor *= 0.1;
-            value  += (*p++ - '0') * factor;
-        }
+    while (1) {
+      if (expo & 1)
+        value *= factor;
+      if ((expo >>= 1) == 0)
+        break;
+      factor *= factor;
     }
-
-    if ( (*p | 32) == 'e' ) {
-        expo   = 0;
-        factor = 10.L;
-
-        switch (*++p) {                 // ja hier weiß ich nicht, was mindestens nach einem 'E' folgenden MUSS.
-        case '-': factor = 0.1;	/* fall through */
-        case '+': p++;
-                  break;
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                  break;
-        default : value = 0.L;
-                  p     = s;
-                  goto done;
-        }
-
-        while ( (unsigned int)(*p - '0') < 10u )
-            expo = 10 * expo + (*p++ - '0');
-
-        while ( 1 ) {
-            if ( expo & 1 )
-                value *= factor;
-            if ( (expo >>= 1) == 0 )
-                break;
-            factor *= factor;
-        }
-    }
+  }
 
 done:
-    if ( endptr != NULL )
-        *endptr = (char*)p;
+  if (endptr != NULL)
+    *endptr = (char *)p;
 
-    return value * sign;
+  return value * sign;
 }
-#endif  // __CKB_IMPL_INCLUDED__
+#endif // __CKB_IMPL_INCLUDED__
