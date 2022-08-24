@@ -1,6 +1,7 @@
 
 
 CKB-DEBUGGER ?= ckb-debugger
+PORT ?= 9999
 
 define run
 	RUST_LOG=debug $(CKB-DEBUGGER) --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r   
