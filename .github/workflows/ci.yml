@@ -1,0 +1,26 @@
+
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: |
+        make all-via-docker
+    - name: Install ckb-debugger
+      run: |
+        cd ..
+        git clone https://github.com/nervosnetwork/ckb-standalone-debugger
+        cd ckb-standalone-debugger/bins
+        git reset --hard 27cb0c6
+        cargo install --path .
+    - name: Rust
+      run: |
+        cd tests/official && make all
+        cd ../test_cases && make all
