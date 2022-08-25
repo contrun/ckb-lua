@@ -303,7 +303,7 @@ do   -- assume at least 32 bits
     -- TODO: See math function porting issue https://github.com/XuJiandong/ckb-lua/issues/7
     -- assert(string.format("%d", 2^53) == "9007199254740992")
     -- assert(string.format("%i", -2^53) == "-9007199254740992")
-    assert(string.format("%x", max) == "7fffffffffffffff"
+    assert(string.format("%x", max) == "7fffffffffffffff")
     assert(string.format("%x", min) == "8000000000000000")
     assert(string.format("%d", max) ==  "9223372036854775807")
     assert(string.format("%d", min) == "-9223372036854775808")
