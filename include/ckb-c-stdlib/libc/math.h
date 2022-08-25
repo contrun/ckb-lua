@@ -1,6 +1,8 @@
 #ifndef _MATH_H
 #define _MATH_H
 
+#define DBL_MAX 1.79769313486231570815e+308
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,8 +52,6 @@ static inline void fp_force_evall(long double x)
 		fp_force_evall(x);                \
 	}                                         \
 } while(0)
-
-#define DBL_EPSILON 2.22044604925031308085e-16
 
 double      fmod(double, double);
 double      frexp(double, int *);
