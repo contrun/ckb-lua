@@ -4,8 +4,6 @@ double asin(double);
 
 double atan2(double, double);
 
-double ceil(double);
-
 double cos(double);
 
 double cosh(double);

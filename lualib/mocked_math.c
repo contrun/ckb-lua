@@ -7,8 +7,6 @@ double asin(double x) { return 0; }
 
 double atan2(double x, double y) { return 0; }
 
-double ceil(double x) { return 0; }
-
 double cos(double x) { return 0; }
 
 double cosh(double x) { return 0; }
