@@ -10,6 +10,7 @@ all:
 	$(call run, locals.lua)	
 	$(call run, literals.lua)
 	$(call run, sort.lua)
+	$(call run, strings.lua)
 
 string:
 	$(call run, strings.lua)
