@@ -28,11 +28,12 @@ int sigsetjmp(sigjmp_buf, int) __setjmp_attr;
 _Noreturn void siglongjmp(sigjmp_buf, int);
 #endif
 
-int _setjmp(jmp_buf) __setjmp_attr __attribute__((naked));
-_Noreturn void _longjmp(jmp_buf, int) __attribute__((naked));
+int _setjmp(jmp_buf) __setjmp_attr;
 
-int setjmp(jmp_buf) __setjmp_attr __attribute__((naked));
-_Noreturn void longjmp(jmp_buf, int) __attribute__((naked));
+_Noreturn void _longjmp(jmp_buf, int);
+
+int setjmp(jmp_buf) __setjmp_attr;
+_Noreturn void longjmp(jmp_buf, int);
 
 #define setjmp setjmp
 
