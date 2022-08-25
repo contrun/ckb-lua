@@ -1,3 +1,6 @@
+#include "math.h"
+#include <stdint.h>
+
 double acos(double x) { return 0; }
 
 double asin(double x) { return 0; }
@@ -12,7 +15,14 @@ double cosh(double x) { return 0; }
 
 double exp(double x) { return 0; }
 
-double fabs(double x) { return 0; }
+double fabs(double x) {
+  union {
+    double f;
+    uint64_t i;
+  } u = {x};
+  u.i &= -1ULL / 2;
+  return u.f;
+}
 
 double log(double x) { return 0; }
 
