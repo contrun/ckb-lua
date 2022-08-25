@@ -332,23 +332,24 @@ void *memmove(void *dest, const void *src, size_t n) {
   return dest;
 }
 
-#define SS (sizeof(size_t))
-#define ALIGN (sizeof(size_t) - 1)
-#define ONES ((size_t)-1 / UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
-#define HASZERO(x) (((x)-ONES) & ~(x)&HIGHS)
+#define CKB_SS (sizeof(size_t))
+#define CKB_ALIGN (sizeof(size_t) - 1)
+#define CKB_ONES ((size_t)-1 / UCHAR_MAX)
+#define CKB_HIGHS (CKB_ONES * (UCHAR_MAX / 2 + 1))
+#define CKB_HASZERO(x) (((x)-CKB_ONES) & ~(x)&CKB_HIGHS)
 
 void *memchr(const void *src, int c, size_t n) {
   const unsigned char *s = src;
   c = (unsigned char)c;
 #ifdef __GNUC__
-  for (; ((uintptr_t)s & ALIGN) && n && *s != c; s++, n--)
+  for (; ((uintptr_t)s & CKB_ALIGN) && n && *s != c; s++, n--)
     ;
   if (n && *s != c) {
     typedef size_t __attribute__((__may_alias__)) word;
     const word *w;
-    size_t k = ONES * c;
-    for (w = (const void *)s; n >= SS && !HASZERO(*w ^ k); w++, n -= SS)
+    size_t k = CKB_ONES * c;
+    for (w = (const void *)s; n >= CKB_SS && !CKB_HASZERO(*w ^ k);
+         w++, n -= CKB_SS)
       ;
     s = (const void *)w;
   }
@@ -1827,9 +1828,9 @@ int ckb_printf(const char *format, ...) { return 0; }
  */
 /* We need to use inline asm for easier compilation,
  * https://stackoverflow.com/a/42358235. */
-/* We need __attribute__((naked)) to remove prolog and epilog,
+/* We need __attribute__((naked)) to remove prologue and epilogue,
  * https://stackoverflow.com/a/42637729 */
-int setjmp(jmp_buf b) {
+__attribute__((naked)) int setjmp(jmp_buf b) {
   asm volatile("sd s0,    0(a0)\n"
                "sd s1,    8(a0)\n"
                "sd s2,    16(a0)\n"
@@ -1848,7 +1849,7 @@ int setjmp(jmp_buf b) {
                "ret\n");
 }
 
-int _setjmp(jmp_buf b) {
+__attribute__((naked)) int _setjmp(jmp_buf b) {
   asm volatile("sd s0,    0(a0)\n"
                "sd s1,    8(a0)\n"
                "sd s2,    16(a0)\n"
@@ -1867,7 +1868,7 @@ int _setjmp(jmp_buf b) {
                "ret\n");
 }
 
-void longjmp(jmp_buf b, int n) {
+__attribute__((naked)) void longjmp(jmp_buf b, int n) {
   asm volatile("ld s0,    0(a0)\n"
                "ld s1,    8(a0)\n"
                "ld s2,    16(a0)\n"
@@ -1887,7 +1888,7 @@ void longjmp(jmp_buf b, int n) {
                "ret\n");
 }
 
-void _longjmp(jmp_buf b, int n) {
+__attribute__((naked)) void _longjmp(jmp_buf b, int n) {
   asm volatile("ld s0,    0(a0)\n"
                "ld s1,    8(a0)\n"
                "ld s2,    16(a0)\n"
