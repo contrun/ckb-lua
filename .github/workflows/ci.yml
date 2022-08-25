@@ -20,7 +20,7 @@ jobs:
         cd ckb-standalone-debugger/bins
         git reset --hard 27cb0c6
         cargo install --path .
-    - name: Rust
+    - name: Run cases
       run: |
-        cd tests/official && make all
-        cd ../test_cases && make all
+        cd tests/official && make ci
+        cd ../test_cases && make ci
