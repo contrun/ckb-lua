@@ -1,7 +1,11 @@
 #include "mocked_math.h"
 #include <stdint.h>
 
+#include "math_pow.c"
+
+#ifndef DBL_EPSILON
 #define DBL_EPSILON 2.22044604925031308085e-16
+#endif
 
 double acos(double x) { return 0; }
 
@@ -77,13 +81,13 @@ double fabs(double x) {
   return u.f;
 }
 
+double ldexp(double x, int n) { return scalbn(x, n); }
+
 double log(double x) { return 0; }
 
 double log2(double x) { return 0; }
 
 double log10(double x) { return 0; }
-
-double pow(double x, double y) { return 0; }
 
 double sin(double x) { return 0; }
 

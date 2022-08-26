@@ -80,6 +80,10 @@ double tan(double);
 
 double tanh(double);
 
+double      scalbn(double, int);
+
+double      ldexp(double, int);
+
 #ifdef __cplusplus
 }
 #endif

@@ -55,8 +55,6 @@ static inline void fp_force_evall(long double x)
 
 double      fmod(double, double);
 double      frexp(double, int *);
-double      scalbn(double, int);
-double      ldexp(double, int);
 
 #ifdef __cplusplus
 }
