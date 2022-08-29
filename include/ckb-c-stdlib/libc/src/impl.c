@@ -2257,6 +2257,7 @@ double strtod(const char *s, char **endptr) {
   int sign = +1;
   ldbltype factor;
   unsigned int expo;
+  unsigned int has_digits = 0;
 
   while (isspace(*p))
     p++;
@@ -2270,8 +2271,10 @@ double strtod(const char *s, char **endptr) {
     break;
   }
 
-  while ((unsigned int)(*p - '0') < 10u)
+  while ((unsigned int)(*p - '0') < 10u) {
     value = value * 10 + (*p++ - '0');
+    has_digits = 1;
+  }
 
   if (*p == '.') {
     factor = 1.;
@@ -2280,6 +2283,7 @@ double strtod(const char *s, char **endptr) {
     while ((unsigned int)(*p - '0') < 10u) {
       factor *= 0.1;
       value += (*p++ - '0') * factor;
+      has_digits = 1;
     }
   }
 
@@ -2324,8 +2328,13 @@ double strtod(const char *s, char **endptr) {
   }
 
 done:
-  if (endptr != NULL)
-    *endptr = (char *)p;
+  if (endptr != NULL) {
+    if (has_digits) {
+      *endptr = (char *)p;
+    } else {
+      *endptr = (char *)s;
+    }
+  }
 
   return value * sign;
 }

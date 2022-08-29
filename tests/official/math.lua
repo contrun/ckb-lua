@@ -383,14 +383,25 @@ assert(tonumber(1/0) == 1/0)
 -- 'tonumber' with strings
 assert(tonumber("0") == 0)
 assert(not tonumber(""))
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not tonumber("  "))
--- assert(not tonumber("-"))
--- assert(not tonumber("  -0x "))
+assert(not tonumber("  "))
+assert(not tonumber("-"))
+assert(not tonumber("  -0x "))
 assert(not tonumber{})
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+-- assert(tonumber'+0.01' == 1/100)
+assert(tonumber'+.01' == 0.01)
+assert(tonumber'.01' == 0.01)
+assert(tonumber'-1.' == -1)
+assert(tonumber'+1.' == 1)
 -- assert(tonumber'+0.01' == 1/100 and tonumber'+.01' == 0.01 and
 --        tonumber'.01' == 0.01    and tonumber'-1.' == -1 and
 --        tonumber'+1.' == 1)
+assert(not tonumber'+ 0.01')
+assert(not tonumber'+.e1')
+assert(not tonumber'1e')
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+-- assert(not tonumber'1.0e+')
+assert(not tonumber'.')
 -- assert(not tonumber'+ 0.01' and not tonumber'+.e1' and
 --        not tonumber'1e'     and not tonumber'1.0e+' and
 --        not tonumber'.')
@@ -461,16 +472,14 @@ assert(not f(tonumber(' INF ')))
 assert(not f(tonumber('Nan')))
 assert(not f(tonumber('nan')))
 
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not f(tonumber('  ')))
+assert(not f(tonumber('  ')))
 assert(not f(tonumber('')))
 assert(not f(tonumber('1  a')))
 assert(not f(tonumber('1  a', 2)))
 assert(not f(tonumber('1\0')))
 assert(not f(tonumber('1 \0')))
 assert(not f(tonumber('1\0 ')))
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not f(tonumber('e1')))
+assert(not f(tonumber('e1')))
 assert(not f(tonumber('e  1')))
 assert(not f(tonumber(' 3.4.5 ')))
 
@@ -494,7 +503,7 @@ assert(not tonumber('0x5p+-2'))
 -- testing hexadecimal numerals
 
 assert(0x10 == 16 and 0xfff == 2^12 - 1 and 0XFB == 251)
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+  -- TODO: Some number formats are not recognized, see issue https://github.com/XuJiandong/ckb-lua/issues/14
 -- assert(0x0p12 == 0 and 0x.0p-3 == 0)
 assert(0xFFFFFFFF == (1 << 32) - 1)
 assert(tonumber('+0x2') == 2)
