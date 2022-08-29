@@ -383,6 +383,7 @@ assert(tonumber(1/0) == 1/0)
 -- 'tonumber' with strings
 assert(tonumber("0") == 0)
 assert(not tonumber(""))
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
 -- assert(not tonumber("  "))
 -- assert(not tonumber("-"))
 -- assert(not tonumber("  -0x "))
@@ -397,8 +398,8 @@ assert(tonumber('-012') == -010-2)
 assert(tonumber('-1.2e2') == - - -120)
 
 assert(tonumber("0xffffffffffff") == (1 << (4*12)) - 1)
--- assert(tonumber("0x"..string.rep("f", (intbits//4))) == -1)
--- assert(tonumber("-0x"..string.rep("f", (intbits//4))) == 1)
+assert(tonumber("0x"..string.rep("f", (intbits//4))) == -1)
+assert(tonumber("-0x"..string.rep("f", (intbits//4))) == 1)
 
 -- testing 'tonumber' with base
 assert(tonumber('  001010  ', 2) == 10)
@@ -421,6 +422,7 @@ end
 
 if not _soft then
   -- tests with very long numerals
+  -- -- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
   -- assert(tonumber("0x"..string.rep("f", 13)..".0") == 2.0^(4*13) - 1)
   -- assert(tonumber("0x"..string.rep("f", 150)..".0") == 2.0^(4*150) - 1)
   -- assert(tonumber("0x"..string.rep("f", 300)..".0") == 2.0^(4*300) - 1)
@@ -459,6 +461,7 @@ assert(not f(tonumber(' INF ')))
 assert(not f(tonumber('Nan')))
 assert(not f(tonumber('nan')))
 
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
 -- assert(not f(tonumber('  ')))
 assert(not f(tonumber('')))
 assert(not f(tonumber('1  a')))
@@ -466,6 +469,7 @@ assert(not f(tonumber('1  a', 2)))
 assert(not f(tonumber('1\0')))
 assert(not f(tonumber('1 \0')))
 assert(not f(tonumber('1\0 ')))
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
 -- assert(not f(tonumber('e1')))
 assert(not f(tonumber('e  1')))
 assert(not f(tonumber(' 3.4.5 ')))
@@ -490,6 +494,7 @@ assert(not tonumber('0x5p+-2'))
 -- testing hexadecimal numerals
 
 assert(0x10 == 16 and 0xfff == 2^12 - 1 and 0XFB == 251)
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
 -- assert(0x0p12 == 0 and 0x.0p-3 == 0)
 assert(0xFFFFFFFF == (1 << 32) - 1)
 assert(tonumber('+0x2') == 2)
@@ -502,6 +507,7 @@ assert(0E+1 == 0 and 0xE+1 == 15 and 0xe-1 == 13)
 
 -- floating hexas
 
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
 -- assert(tonumber('  0x2.5  ') == 0x25/16)
 -- assert(tonumber('  -0x2.5  ') == -0x25/16)
 -- assert(tonumber('  +0x0.51p+8  ') == 0x51)
@@ -515,8 +521,10 @@ assert(0E+1 == 0 and 0xE+1 == 15 and 0xe-1 == 13)
 
 assert(1.1 == 1.+.1)
 assert(100.0 == 1E2 and .01 == 1e-2)
+-- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13
 -- assert(1111111111 - 1111111110 == 1000.00e-03)
 assert(1.1 == '1.'+'.1')
+-- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13
 -- assert(tonumber'1111111111' - tonumber'1111111110' ==
 --        tonumber"  +0.001e+3 \n\t")
 
@@ -647,6 +655,7 @@ assert(math.ult(maxint, minint))
 assert(not math.ult(minint, maxint))
 
 
+-- TODO: math function not ported, see issue https://github.com/XuJiandong/ckb-lua/issues/7
 -- assert(eq(math.sin(-9.8)^2 + math.cos(-9.8)^2, 1))
 -- assert(eq(math.tan(math.pi/4), 1))
 -- assert(eq(math.sin(math.pi/2), 1) and eq(math.cos(math.pi/2), 0))
@@ -657,12 +666,15 @@ assert(math.abs(-10.43) == 10.43)
 assert(eqT(math.abs(minint), minint))
 assert(eqT(math.abs(maxint), maxint))
 assert(eqT(math.abs(-maxint), maxint))
+-- TODO: math function not ported, see issue https://github.com/XuJiandong/ckb-lua/issues/7
 -- assert(eq(math.atan(1,0), math.pi/2))
 assert(math.fmod(10,3) == 1)
+-- TODO: math function not ported, see issue https://github.com/XuJiandong/ckb-lua/issues/7
 -- assert(eq(math.sqrt(10)^2, 10))
 assert(eq(math.log(2, 10), math.log(2)/math.log(10)))
 assert(eq(math.log(2, 2), 1))
 assert(eq(math.log(9, 3), 2))
+-- TODO: math function not ported, see issue https://github.com/XuJiandong/ckb-lua/issues/7
 -- assert(eq(math.exp(0), 1))
 assert(eq(math.sin(10), math.sin(10%(2*math.pi))))
 
@@ -836,6 +848,7 @@ do
     res = (h % 2^32) * 2^(floatbits - 32) + ((l >> (64 - floatbits)) % 2^32)
   end
   local rand = random()
+  -- TODO: Some number formats are not recognized, see issue https://github.com/XuJiandong/ckb-lua/issues/14
   -- assert(eq(rand, 0x0.7a7040a5a323c9d6, 2^-floatbits))
   assert(rand * 2^floatbits == res)
 end
