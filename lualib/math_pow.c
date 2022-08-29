@@ -57,6 +57,8 @@
  * to produce the hexadecimal values shown.
  */
 
+#include <stdio.h>
+
 #include <float.h>
 
 typedef union
@@ -64,8 +66,8 @@ typedef union
   double value;
   struct
   {
-    uint32_t msw;
     uint32_t lsw;
+    uint32_t msw;
   } parts;
   struct
   {
