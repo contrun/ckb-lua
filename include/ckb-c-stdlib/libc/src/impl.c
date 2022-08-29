@@ -980,8 +980,6 @@ void *bsearch(const void *key, const void *base, size_t nel, size_t width,
 #define FLAGS_PRECISION (1U << 10U)
 #define FLAGS_ADAPT_EXP (1U << 11U)
 
-#define DBL_MAX 1.79769313486231570815e+308
-
 // output function type
 typedef void (*out_fct_type)(char character, void *buffer, size_t idx,
                              size_t maxlen);
@@ -2003,68 +2001,6 @@ double fmod(double x, double y) {
   uxi |= (uint64_t)sx << 63;
   ux.i = uxi;
   return ux.f;
-}
-
-double scalbn(double x, int n) {
-  union {
-    double f;
-    uint64_t i;
-  } u;
-  double y = x;
-
-  if (n > 1023) {
-    y *= 0x1p1023;
-    n -= 1023;
-    if (n > 1023) {
-      y *= 0x1p1023;
-      n -= 1023;
-      if (n > 1023)
-        n = 1023;
-    }
-  } else if (n < -1022) {
-    /* make sure final n < -53 to avoid double
-       rounding in the subnormal range */
-    y *= 0x1p-1022 * 0x1p53;
-    n += 1022 - 53;
-    if (n < -1022) {
-      y *= 0x1p-1022 * 0x1p53;
-      n += 1022 - 53;
-      if (n < -1022)
-        n = -1022;
-    }
-  }
-  u.i = (uint64_t)(0x3ff + n) << 52;
-  x = y * u.f;
-  return x;
-}
-
-double ldexp(double x, int n) { return scalbn(x, n); }
-
-double floor(double x) {
-#define EPS DBL_EPSILON
-  static const double toint = 1 / EPS;
-  union {
-    double f;
-    uint64_t i;
-  } u = {x};
-  int e = u.i >> 52 & 0x7ff;
-  double y;
-
-  if (e >= 0x3ff + 52 || x == 0)
-    return x;
-  /* y = int(x) - x, where int(x) is an integer neighbor of x */
-  if (u.i >> 63)
-    y = x - toint + toint - x;
-  else
-    y = x + toint - toint - x;
-  /* special case because of non-nearest rounding modes */
-  if (e <= 0x3ff - 1) {
-    FORCE_EVAL(y);
-    return u.i >> 63 ? -1 : 0;
-  }
-  if (y > 0)
-    return x + y - 1;
-  return x + y;
 }
 
 int strcoll(const char *l, const char *r) { return strcmp(l, r); }
