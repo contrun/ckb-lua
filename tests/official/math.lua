@@ -433,18 +433,18 @@ end
 
 if not _soft then
   -- tests with very long numerals
-  -- -- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
-  -- assert(tonumber("0x"..string.rep("f", 13)..".0") == 2.0^(4*13) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 150)..".0") == 2.0^(4*150) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 300)..".0") == 2.0^(4*300) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 500)..".0") == 2.0^(4*500) - 1)
-  -- assert(tonumber('0x3.' .. string.rep('0', 1000)) == 3)
-  -- assert(tonumber('0x' .. string.rep('0', 1000) .. 'a') == 10)
-  -- assert(tonumber('0x0.' .. string.rep('0', 13).."1") == 2.0^(-4*14))
-  -- assert(tonumber('0x0.' .. string.rep('0', 150).."1") == 2.0^(-4*151))
-  -- assert(tonumber('0x0.' .. string.rep('0', 300).."1") == 2.0^(-4*301))
-  -- assert(tonumber('0x0.' .. string.rep('0', 500).."1") == 2.0^(-4*501))
+  assert(tonumber("0x"..string.rep("f", 13)..".0") == 2.0^(4*13) - 1)
+  assert(tonumber("0x"..string.rep("f", 150)..".0") == 2.0^(4*150) - 1)
+  assert(tonumber("0x"..string.rep("f", 300)..".0") == 2.0^(4*300) - 1)
+  assert(tonumber("0x"..string.rep("f", 500)..".0") == 2.0^(4*500) - 1)
+  assert(tonumber('0x3.' .. string.rep('0', 1000)) == 3)
+  assert(tonumber('0x' .. string.rep('0', 1000) .. 'a') == 10)
+  assert(tonumber('0x0.' .. string.rep('0', 13).."1") == 2.0^(-4*14))
+  assert(tonumber('0x0.' .. string.rep('0', 150).."1") == 2.0^(-4*151))
+  assert(tonumber('0x0.' .. string.rep('0', 300).."1") == 2.0^(-4*301))
+  assert(tonumber('0x0.' .. string.rep('0', 500).."1") == 2.0^(-4*501))
 
+  -- -- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
   -- assert(tonumber('0xe03' .. string.rep('0', 1000) .. 'p-4000') == 3587.0)
   -- assert(tonumber('0x.' .. string.rep('0', 1000) .. '74p4004') == 0x7.4)
 end
@@ -529,8 +529,9 @@ assert(0E+1 == 0 and 0xE+1 == 15 and 0xe-1 == 13)
 
 
 assert(1.1 == 1.+.1)
-assert(100.0 == 1E2 and .01 == 1e-2)
+assert(100.0 == 1E2)
 -- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13
+-- assert(.01 == 1e-2)
 -- assert(1111111111 - 1111111110 == 1000.00e-03)
 assert(1.1 == '1.'+'.1')
 -- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13

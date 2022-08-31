@@ -2250,11 +2250,28 @@ done:
   return value * sign;
 }
 
+// Convert char to an int in base `base`,
+// `base` must be 10 or 16, return -1 on error.
+int char2int(char ch, unsigned int base)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (base == 16) {
+        if (ch >= 'A' && ch <= 'F')
+            return ch - 'A' + 10;
+        if (ch >= 'a' && ch <= 'f')
+            return ch - 'a' + 10;
+    }
+    return -1;
+}
+
 #define ldbltype long double
 double strtod(const char *s, char **endptr) {
   register const char *p = s;
   register ldbltype value = 0.;
   int sign = +1;
+  unsigned int base = 10;
+  ldbltype base_inverse = (ldbltype)1/(ldbltype)base;
   ldbltype factor;
   unsigned int expo;
   unsigned int has_digits = 0;
@@ -2267,12 +2284,23 @@ double strtod(const char *s, char **endptr) {
     sign = -1; /* fall through */
   case '+':
     p++;
+  case '0':
+    p++;
+    if ((*p | 32) == 'x') {
+      base = 16;
+      base_inverse = (ldbltype)1/(ldbltype)base;
+      p++;
+    } else {
+      p--;
+    }
   default:
     break;
   }
 
-  while ((unsigned int)(*p - '0') < 10u) {
-    value = value * 10 + (*p++ - '0');
+  unsigned int current_value;
+  while ((current_value = char2int(*p, base)) != -1) {
+    p++;
+    value = value * base + current_value;
     has_digits = 1;
   }
 
@@ -2280,14 +2308,15 @@ double strtod(const char *s, char **endptr) {
     factor = 1.;
 
     p++;
-    while ((unsigned int)(*p - '0') < 10u) {
-      factor *= 0.1;
-      value += (*p++ - '0') * factor;
+    while ((current_value = char2int(*p, base)) != -1) {
+      p++;
+      factor *= base_inverse;
+      value += current_value * factor;
       has_digits = 1;
     }
   }
 
-  if ((*p | 32) == 'e') {
+  if ((*p | 32) == 'e' && base == 10) {
     expo = 0;
     factor = 10.;
 
@@ -2327,6 +2356,11 @@ double strtod(const char *s, char **endptr) {
     }
   }
 
+  if ((*p | 32) == 'p' && base == 16) {
+    // TODO: add specifier p support
+    // https://cplusplus.com/reference/cstdlib/strtod/
+    //  - A 0x or 0X prefix, then a sequence of hexadecimal digits (as in isxdigit) optionally containing a period which separates the whole and fractional number parts. Optionally followed by a power of 2 exponent (a p or P character followed by an optional sign and a sequence of hexadecimal digits).
+  }
 done:
   if (endptr != NULL) {
     if (has_digits) {
