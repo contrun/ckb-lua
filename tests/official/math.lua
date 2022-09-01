@@ -383,14 +383,25 @@ assert(tonumber(1/0) == 1/0)
 -- 'tonumber' with strings
 assert(tonumber("0") == 0)
 assert(not tonumber(""))
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not tonumber("  "))
--- assert(not tonumber("-"))
--- assert(not tonumber("  -0x "))
+assert(not tonumber("  "))
+assert(not tonumber("-"))
+assert(not tonumber("  -0x "))
 assert(not tonumber{})
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+-- assert(tonumber'+0.01' == 1/100)
+assert(tonumber'+.01' == 0.01)
+assert(tonumber'.01' == 0.01)
+assert(tonumber'-1.' == -1)
+assert(tonumber'+1.' == 1)
 -- assert(tonumber'+0.01' == 1/100 and tonumber'+.01' == 0.01 and
 --        tonumber'.01' == 0.01    and tonumber'-1.' == -1 and
 --        tonumber'+1.' == 1)
+assert(not tonumber'+ 0.01')
+assert(not tonumber'+.e1')
+assert(not tonumber'1e')
+-- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+-- assert(not tonumber'1.0e+')
+assert(not tonumber'.')
 -- assert(not tonumber'+ 0.01' and not tonumber'+.e1' and
 --        not tonumber'1e'     and not tonumber'1.0e+' and
 --        not tonumber'.')
@@ -422,18 +433,18 @@ end
 
 if not _soft then
   -- tests with very long numerals
-  -- -- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
-  -- assert(tonumber("0x"..string.rep("f", 13)..".0") == 2.0^(4*13) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 150)..".0") == 2.0^(4*150) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 300)..".0") == 2.0^(4*300) - 1)
-  -- assert(tonumber("0x"..string.rep("f", 500)..".0") == 2.0^(4*500) - 1)
-  -- assert(tonumber('0x3.' .. string.rep('0', 1000)) == 3)
-  -- assert(tonumber('0x' .. string.rep('0', 1000) .. 'a') == 10)
-  -- assert(tonumber('0x0.' .. string.rep('0', 13).."1") == 2.0^(-4*14))
-  -- assert(tonumber('0x0.' .. string.rep('0', 150).."1") == 2.0^(-4*151))
-  -- assert(tonumber('0x0.' .. string.rep('0', 300).."1") == 2.0^(-4*301))
-  -- assert(tonumber('0x0.' .. string.rep('0', 500).."1") == 2.0^(-4*501))
+  assert(tonumber("0x"..string.rep("f", 13)..".0") == 2.0^(4*13) - 1)
+  assert(tonumber("0x"..string.rep("f", 150)..".0") == 2.0^(4*150) - 1)
+  assert(tonumber("0x"..string.rep("f", 300)..".0") == 2.0^(4*300) - 1)
+  assert(tonumber("0x"..string.rep("f", 500)..".0") == 2.0^(4*500) - 1)
+  assert(tonumber('0x3.' .. string.rep('0', 1000)) == 3)
+  assert(tonumber('0x' .. string.rep('0', 1000) .. 'a') == 10)
+  assert(tonumber('0x0.' .. string.rep('0', 13).."1") == 2.0^(-4*14))
+  assert(tonumber('0x0.' .. string.rep('0', 150).."1") == 2.0^(-4*151))
+  assert(tonumber('0x0.' .. string.rep('0', 300).."1") == 2.0^(-4*301))
+  assert(tonumber('0x0.' .. string.rep('0', 500).."1") == 2.0^(-4*501))
 
+  -- -- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
   -- assert(tonumber('0xe03' .. string.rep('0', 1000) .. 'p-4000') == 3587.0)
   -- assert(tonumber('0x.' .. string.rep('0', 1000) .. '74p4004') == 0x7.4)
 end
@@ -461,16 +472,14 @@ assert(not f(tonumber(' INF ')))
 assert(not f(tonumber('Nan')))
 assert(not f(tonumber('nan')))
 
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not f(tonumber('  ')))
+assert(not f(tonumber('  ')))
 assert(not f(tonumber('')))
 assert(not f(tonumber('1  a')))
 assert(not f(tonumber('1  a', 2)))
 assert(not f(tonumber('1\0')))
 assert(not f(tonumber('1 \0')))
 assert(not f(tonumber('1\0 ')))
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
--- assert(not f(tonumber('e1')))
+assert(not f(tonumber('e1')))
 assert(not f(tonumber('e  1')))
 assert(not f(tonumber(' 3.4.5 ')))
 
@@ -494,7 +503,7 @@ assert(not tonumber('0x5p+-2'))
 -- testing hexadecimal numerals
 
 assert(0x10 == 16 and 0xfff == 2^12 - 1 and 0XFB == 251)
--- TODO: tonumber is not working correctly, see issue https://github.com/XuJiandong/ckb-lua/issues/12
+  -- TODO: Some number formats are not recognized, see issue https://github.com/XuJiandong/ckb-lua/issues/14
 -- assert(0x0p12 == 0 and 0x.0p-3 == 0)
 assert(0xFFFFFFFF == (1 << 32) - 1)
 assert(tonumber('+0x2') == 2)
@@ -520,8 +529,9 @@ assert(0E+1 == 0 and 0xE+1 == 15 and 0xe-1 == 13)
 
 
 assert(1.1 == 1.+.1)
-assert(100.0 == 1E2 and .01 == 1e-2)
+assert(100.0 == 1E2)
 -- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13
+-- assert(.01 == 1e-2)
 -- assert(1111111111 - 1111111110 == 1000.00e-03)
 assert(1.1 == '1.'+'.1')
 -- TODO: See issue https://github.com/XuJiandong/ckb-lua/issues/13
