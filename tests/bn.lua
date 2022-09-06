@@ -1,20 +1,29 @@
 local bn = {}
 
 local bn_mt = {}
-local MAX_INTEGER = 2 ^ 32
+local MAX_INTEGER = 1 << 32
 
-local dump = nil
+local load = nil
+local save = nil
+local tostring = nil
 
 local function bind_methods(t)
     assert(#t > 0)
-    t.dump = dump
+    t.load = load
     return setmetatable(t, bn_mt)
+end
+
+bn_mt.__tostring = function(self)
+    local res = {}
+    for k, v in ipairs(self) do table.insert(res, string.format("%d", v)) end
+    return "[" .. table.concat(res, ",") .. "]"
 end
 
 bn_mt.__add = function(a, b)
     assert(#a == #b)
     local carry = 0
     local res = {}
+    res.overflow = false
     for i = 1, #a do
         local temp = a[i] + b[i] + carry
         if temp >= MAX_INTEGER then
@@ -25,7 +34,8 @@ bn_mt.__add = function(a, b)
         end
         res[i] = temp
     end
-    return bind_methods(res), carry > 0
+    if carry > 0 then res.overflow = true end
+    return bind_methods(res)
 end
 
 bn_mt.__eq = function(a, b)
@@ -68,16 +78,16 @@ bn.new = function(bits, u64_value)
     return bind_methods(res)
 end
 
-dump = function(bn, name)
-    local prefix = ""
-    if name then
-        prefix = string.format("%s =", name)
-    else
-        prefix = "<no name> ="
+load = function(self, raw)
+    assert(raw:len() > 0)
+    assert(raw:len() % 4 == 0)
+    local index = 1
+    local fmt = "<I4"
+    for i = 1, raw:len(), 4 do
+        local num = fmt:unpack(raw, i)
+        self[index] = num
+        index = index + 1
     end
-    local res = {}
-    for k, v in ipairs(bn) do table.insert(res, string.format("%d", v)) end
-    print(prefix, table.concat(res, " "))
 end
 
 local function test()
@@ -95,12 +105,23 @@ local function test()
     assert(b >= a)
     local a = bn.new(256, MAX_INTEGER - 1)
     local b = bn.new(256, 1)
-    local sum, overflow = a + b
+    local sum = a + b
     assert(sum[1] == 0)
     assert(sum[2] == 1)
-    assert(not overflow)
-    sum:dump("sum")
+    assert(not sum.overflow)
+
+    local zero = bn.new(256, 0)
+    local ff = string.char(0xFF)
+    local u256_max = ff:rep(32)
+    local a = bn.new(256, 0)
+    local b = bn.new(256, 1)
+    a:load(u256_max)
+    local sum, overflow = a + b
+    assert(sum == zero)
+    assert(sum.overflow)
+    print(string.format("sum = %s", sum))
 end
 
+print("start testing ...")
 test()
-
+print("done")
