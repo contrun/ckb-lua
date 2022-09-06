@@ -3,17 +3,18 @@
 CKB-DEBUGGER ?= ckb-debugger
 PORT ?= 9999
 TEST ?= tmp
+MAX-CYCLES ?= 99999999999
 
 define run
-	RUST_LOG=debug $(CKB-DEBUGGER) --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r   
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r   
 endef
 
 define run_ci
-	RUST_LOG=debug $(CKB-DEBUGGER) --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r  2>&1 | fgrep 'Run result: 0'
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r  2>&1 | fgrep 'Run result: 0'
 endef
 
 define run_with_mocked_tx
-	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file sample_data1.json --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r  2>&1 | fgrep 'Run result: 0'
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file sample_data1.json --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file $(1)  --bin ../../build/lua-loader.debug -- lua-loader -r  2>&1 | fgrep 'Run result: 0'
 endef
 
 define run_pretty_result
@@ -24,12 +25,15 @@ all:
 	$(call run, test_require.lua)
 	$(call run, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
+	$(call run, bn.lua)
 
 ci:
 	$(call run_ci, test_require.lua)
 	$(call run_ci, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, out_of_memory.lua) 2>&1 | fgrep 'not enough memory'
+	$(call run, out_of_memory2.lua) 2>&1 | fgrep 'not enough memory'
+	$(call run_ci, bn.lua)
 
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
