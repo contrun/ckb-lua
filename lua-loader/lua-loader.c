@@ -13,6 +13,8 @@
 #include "lua.h"
 #include "lualib.h"
 
+#include "lua-ckb.c"
+
 #include "ckb_syscalls.h"
 
 int exit(int c) {
@@ -299,6 +301,7 @@ static int pmain(lua_State *L) {
         return 0;
     }
     luaL_openlibs(L);                      /* open standard libraries */
+    luaopen_ckb(L);
     createargtable(L, argv, argc, script); /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
     if (!runargs(L, argv, script))         /* execute arguments -e and -l */
