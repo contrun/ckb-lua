@@ -143,6 +143,51 @@ static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
+int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
+                            uint8_t hash_type) {
+    size_t current = 0;
+    size_t field =
+        (hash_type == 1) ? CKB_CELL_FIELD_TYPE_HASH : CKB_CELL_FIELD_DATA_HASH;
+    unsigned char *buf = NULL;
+    uint64_t buflen = 32;
+    while (current < SIZE_MAX) {
+        uint64_t len = 32;
+        uint8_t hash[32];
+
+        int ret = ckb_load_cell_by_field(hash, &len, 0, current,
+                                         CKB_SOURCE_CELL_DEP, field);
+        switch (ret) {
+            case CKB_ITEM_MISSING:
+                return -CKB_ITEM_MISSING;
+            case CKB_SUCCESS:
+                if (memcmp(code_hash, hash, 32) == 0) {
+                    /* Found a match */
+                    ret = ckb_load_cell_data(NULL, &buflen, 0, current,
+                                             CKB_SOURCE_CELL_DEP);
+                    if (ret) {
+                        return ret;
+                    }
+                    buf = malloc(buflen);
+                    if (buf == NULL) {
+                        return CKB_LUA_OUT_OF_MEMORY;
+                    }
+                    ret = ckb_load_cell_data(buf, &buflen, 0, current,
+                                             CKB_SOURCE_CELL_DEP);
+                    if (ret) {
+                        return ret;
+                    }
+                    goto eval;
+                }
+                break;
+            default:
+                return ret;
+        }
+        current++;
+    }
+eval:
+    return dostring(L, (const char *)buf, __func__);
+}
+
 /*
 ** Receives 'globname[=modname]' and runs 'globname = require(modname)'.
 */
