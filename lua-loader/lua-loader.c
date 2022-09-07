@@ -143,6 +143,36 @@ static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
+int load_lua_code_from_cell_data(lua_State *L) {
+    unsigned char *buf = NULL;
+    uint64_t buflen = 0;
+    size_t current = 0;
+    while (current < SIZE_MAX) {
+        int ret =
+            ckb_load_cell_data(NULL, &buflen, 0, current, CKB_SOURCE_CELL_DEP);
+        switch (ret) {
+            case CKB_ITEM_MISSING:
+                return -CKB_ITEM_MISSING;
+            case CKB_SUCCESS:
+                buf = malloc(buflen);
+                if (buf == NULL) {
+                    return CKB_LUA_OUT_OF_MEMORY;
+                }
+                ret = ckb_load_cell_data(buf, &buflen, 0, current,
+                                         CKB_SOURCE_CELL_DEP);
+                if (ret) {
+                    return ret;
+                }
+                goto eval;
+            default:
+                return CKB_INDEX_OUT_OF_BOUND;
+        }
+        current++;
+    }
+eval:
+    return dostring(L, (const char *)buf, __func__);
+}
+
 int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
                             uint8_t hash_type) {
     size_t current = 0;
@@ -353,6 +383,10 @@ static int pmain(lua_State *L) {
         return 0;                          /* something failed */
     if (args & has_r) {
         if (!run_from_file(L)) return 0;
+    }
+    // No arguments found, trying to load lua code from cell data
+    if (argc == 1) {
+        if (load_lua_code_from_cell_data(L)) return 0;
     }
     lua_pushboolean(L, 1); /* signal no errors */
     return 1;
