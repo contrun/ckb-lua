@@ -10,7 +10,7 @@ CC=riscv64-unknown-linux-gnu-gcc
 # -ULUA_USE_LINUX -ULUA_USE_POSIX to make lua dependencies minimal,
 # otherwise, we may unable to find various platform dependent symbols, e.g.
 # setsignal.
-CFLAGS= -O0 -Wall -Wextra -DLUA_COMPAT_5_3 -ULUA_USE_LINUX -ULUA_USE_POSIX $(SYSCFLAGS) $(MYCFLAGS)
+CFLAGS= -Os -Wall -Wextra -DLUA_COMPAT_5_3 -ULUA_USE_LINUX -ULUA_USE_POSIX $(SYSCFLAGS) $(MYCFLAGS)
 LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 

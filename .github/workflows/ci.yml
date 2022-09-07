@@ -24,3 +24,4 @@ jobs:
       run: |
         cd tests/official && make ci
         cd ../test_cases && make ci
+        cd ../ckb-c-stdlib-tests && make all-via-docker && make ci
