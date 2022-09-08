@@ -15,7 +15,11 @@
 
 #include "lua-ckb.c"
 
+#include "blockchain.h"
 #include "ckb_syscalls.h"
+
+#define LUA_LOADER_ARGS_SIZE 2
+#define BLAKE2B_BLOCK_SIZE 32
 
 int exit(int c) {
     ckb_exit(c);
@@ -141,6 +145,67 @@ static int dochunk(lua_State *L, int status) {
 
 static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
+}
+
+int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
+                            uint8_t hash_type) {
+    size_t index = 0;
+    int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
+    if (ret) {
+        return ret;
+    }
+    unsigned char *buf = NULL;
+    uint64_t buflen = 0;
+    ret = ckb_load_cell_data(NULL, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        return ret;
+    }
+    // Need to append '\0' as buffer should be a valid c string
+    buf = malloc(buflen + 1);
+    if (buf == NULL) {
+        return CKB_LUA_OUT_OF_MEMORY;
+    }
+    ret = ckb_load_cell_data(buf, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        return ret;
+    }
+    // append '\0' to buffer
+    memset(buf + buflen, 0, 1);
+    return dostring(L, (const char *)buf, __func__);
+}
+
+#define SCRIPT_SIZE 32768
+int load_lua_code_from_cell_data(lua_State *L) {
+    unsigned char script[SCRIPT_SIZE];
+    uint64_t len = SCRIPT_SIZE;
+    int ret = ckb_load_script(script, &len, 0);
+    if (ret) {
+        return ret;
+    }
+    if (len > SCRIPT_SIZE) {
+        return LUA_ERROR_SCRIPT_TOO_LONG;
+    }
+    mol_seg_t script_seg;
+    script_seg.ptr = (uint8_t *)script;
+    script_seg.size = len;
+
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        return LUA_ERROR_ENCODING;
+    }
+
+    // The script arguments are in the following format
+    // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
+    // <hash type of lua code, 1 byte> <lua script args, variable length>
+    // TOOD: parse lua script args
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
+    if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
+        return -LUA_ERROR_ARGUMENTS_LEN;
+    }
+    uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
+    uint8_t hash_type =
+        *(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
+    return load_lua_code_with_hash(L, code_hash, hash_type);
 }
 
 /*
@@ -308,6 +373,12 @@ static int pmain(lua_State *L) {
         return 0;                          /* something failed */
     if (args & has_r) {
         if (!run_from_file(L)) return 0;
+    }
+    // No arguments found, trying to load lua code from cell data
+    // argc == 0 is necessary
+    // See https://github.com/XuJiandong/ckb-lua/issues/25 for details
+    if (argc == 0 || argc == 1) {
+        if (load_lua_code_from_cell_data(L)) return 0;
     }
     lua_pushboolean(L, 1); /* signal no errors */
     return 1;
