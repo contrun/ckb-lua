@@ -22,7 +22,7 @@ define run_pretty_result
 endef
 
 evaluate-lua-code-in-cell-data:
-	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --bin ../../build/lua-loader.debug -- lua-loader 2>&1 | fgrep 'hello world'
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- lua-loader 2>&1 | fgrep 'hello world'
 
 all:
 	$(call run, test_require.lua)

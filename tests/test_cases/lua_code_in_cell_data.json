@@ -39,7 +39,7 @@
           },
           "type": {
             "args": "0x",
-            "code_hash": "0xfa93982d582a0f3302a96ac34944d14b41d53549b9fb2ab284eafc1d021588ad",
+            "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
             "hash_type": "data1"
           }
         },
@@ -78,7 +78,7 @@
           "hash_type": "data1"
         },
         "type": {
-          "args": "0x666f6f626172",
+          "args": "0x00005bccedc454a5a9df7a4fdbb0a28b87ac5af5e4229ff3bec9a3d7ff549bf0104602",
           "code_hash": "0xfa93982d582a0f3302a96ac34944d14b41d53549b9fb2ab284eafc1d021588ad",
           "hash_type": "data1"
         }

@@ -18,6 +18,9 @@
 #include "blockchain.h"
 #include "ckb_syscalls.h"
 
+#define LUA_LOADER_ARGS_SIZE 2
+#define BLAKE2B_BLOCK_SIZE 32
+
 int exit(int c) {
     ckb_exit(c);
     return 0;
@@ -190,10 +193,19 @@ int load_lua_code_from_cell_data(lua_State *L) {
         return LUA_ERROR_ENCODING;
     }
 
-    mol_seg_t code_hash_seg = MolReader_Script_get_code_hash(&script_seg);
-    mol_seg_t hash_type_seg = MolReader_Script_get_hash_type(&script_seg);
-    uint8_t hash_type2 = *((uint8_t *)hash_type_seg.ptr);
-    return load_lua_code_with_hash(L, code_hash_seg.ptr, hash_type2);
+    // The script arguments are in the following format
+    // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
+    // <hash type of lua code, 1 byte> <lua script args, variable length>
+    // TOOD: parse lua script args
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
+    if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
+        return -LUA_ERROR_ARGUMENTS_LEN;
+    }
+    uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
+    uint8_t hash_type =
+        *(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
+    return load_lua_code_with_hash(L, code_hash, hash_type);
 }
 
 /*
