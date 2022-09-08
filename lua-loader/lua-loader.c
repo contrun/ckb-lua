@@ -375,7 +375,9 @@ static int pmain(lua_State *L) {
         if (!run_from_file(L)) return 0;
     }
     // No arguments found, trying to load lua code from cell data
-    if (argc == 1) {
+    // argc == 0 is necessary
+    // See https://github.com/XuJiandong/ckb-lua/issues/25 for details
+    if (argc == 0 || argc == 1) {
         if (load_lua_code_from_cell_data(L)) return 0;
     }
     lua_pushboolean(L, 1); /* signal no errors */
