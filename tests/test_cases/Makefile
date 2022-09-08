@@ -34,6 +34,7 @@ ci:
 	$(call run, out_of_memory.lua) 2>&1 | fgrep 'not enough memory'
 	$(call run, out_of_memory2.lua) 2>&1 | fgrep 'not enough memory'
 	$(call run_ci, bn.lua)
+	$(call run_ci, msgpack-tests.lua)
 
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
