@@ -37,6 +37,8 @@ typedef struct {
 } FIELD;
 
 #define CKB_LUA_OUT_OF_MEMORY 101
+#define LUA_ERROR_ENCODING -2
+#define LUA_ERROR_SCRIPT_TOO_LONG -21
 
 /////////////////////////////////////////////////////
 // Utilities

@@ -15,6 +15,7 @@
 
 #include "lua-ckb.c"
 
+#include "blockchain.h"
 #include "ckb_syscalls.h"
 
 int exit(int c) {
@@ -143,79 +144,56 @@ static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
-int load_lua_code_from_cell_data(lua_State *L) {
+int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
+                            uint8_t hash_type) {
+    size_t index = 0;
+    int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
+    if (ret) {
+        return ret;
+    }
     unsigned char *buf = NULL;
     uint64_t buflen = 0;
-    size_t current = 0;
-    while (current < SIZE_MAX) {
-        int ret =
-            ckb_load_cell_data(NULL, &buflen, 0, current, CKB_SOURCE_CELL_DEP);
-        switch (ret) {
-            case CKB_ITEM_MISSING:
-                return -CKB_ITEM_MISSING;
-            case CKB_SUCCESS:
-                buf = malloc(buflen);
-                if (buf == NULL) {
-                    return CKB_LUA_OUT_OF_MEMORY;
-                }
-                ret = ckb_load_cell_data(buf, &buflen, 0, current,
-                                         CKB_SOURCE_CELL_DEP);
-                if (ret) {
-                    return ret;
-                }
-                goto eval;
-            default:
-                return CKB_INDEX_OUT_OF_BOUND;
-        }
-        current++;
+    ret = ckb_load_cell_data(NULL, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        return ret;
     }
-eval:
+    // Need to append '\0' as buffer should be a valid c string
+    buf = malloc(buflen + 1);
+    if (buf == NULL) {
+        return CKB_LUA_OUT_OF_MEMORY;
+    }
+    ret = ckb_load_cell_data(buf, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        return ret;
+    }
+    // append '\0' to buffer
+    memset(buf + buflen, 0, 1);
     return dostring(L, (const char *)buf, __func__);
 }
 
-int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
-                            uint8_t hash_type) {
-    size_t current = 0;
-    size_t field =
-        (hash_type == 1) ? CKB_CELL_FIELD_TYPE_HASH : CKB_CELL_FIELD_DATA_HASH;
-    unsigned char *buf = NULL;
-    uint64_t buflen = 32;
-    while (current < SIZE_MAX) {
-        uint64_t len = 32;
-        uint8_t hash[32];
-
-        int ret = ckb_load_cell_by_field(hash, &len, 0, current,
-                                         CKB_SOURCE_CELL_DEP, field);
-        switch (ret) {
-            case CKB_ITEM_MISSING:
-                return -CKB_ITEM_MISSING;
-            case CKB_SUCCESS:
-                if (memcmp(code_hash, hash, 32) == 0) {
-                    /* Found a match */
-                    ret = ckb_load_cell_data(NULL, &buflen, 0, current,
-                                             CKB_SOURCE_CELL_DEP);
-                    if (ret) {
-                        return ret;
-                    }
-                    buf = malloc(buflen);
-                    if (buf == NULL) {
-                        return CKB_LUA_OUT_OF_MEMORY;
-                    }
-                    ret = ckb_load_cell_data(buf, &buflen, 0, current,
-                                             CKB_SOURCE_CELL_DEP);
-                    if (ret) {
-                        return ret;
-                    }
-                    goto eval;
-                }
-                break;
-            default:
-                return ret;
-        }
-        current++;
+#define SCRIPT_SIZE 32768
+int load_lua_code_from_cell_data(lua_State *L) {
+    unsigned char script[SCRIPT_SIZE];
+    uint64_t len = SCRIPT_SIZE;
+    int ret = ckb_load_script(script, &len, 0);
+    if (ret) {
+        return ret;
     }
-eval:
-    return dostring(L, (const char *)buf, __func__);
+    if (len > SCRIPT_SIZE) {
+        return LUA_ERROR_SCRIPT_TOO_LONG;
+    }
+    mol_seg_t script_seg;
+    script_seg.ptr = (uint8_t *)script;
+    script_seg.size = len;
+
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        return LUA_ERROR_ENCODING;
+    }
+
+    mol_seg_t code_hash_seg = MolReader_Script_get_code_hash(&script_seg);
+    mol_seg_t hash_type_seg = MolReader_Script_get_hash_type(&script_seg);
+    uint8_t hash_type2 = *((uint8_t *)hash_type_seg.ptr);
+    return load_lua_code_with_hash(L, code_hash_seg.ptr, hash_type2);
 }
 
 /*
