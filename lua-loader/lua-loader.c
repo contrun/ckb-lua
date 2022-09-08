@@ -300,7 +300,7 @@ static int pmain(lua_State *L) {
         print_usage(argv[script]); /* 'script' has index of bad arg. */
         return 0;
     }
-    luaL_openlibs(L);                      /* open standard libraries */
+    luaL_openlibs(L); /* open standard libraries */
     luaopen_ckb(L);
     createargtable(L, argv, argc, script); /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
