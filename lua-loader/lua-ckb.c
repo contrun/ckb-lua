@@ -48,9 +48,12 @@ union syscall_function_union {
     syscall_v5 *v5f;
 };
 
+#define max_extra_argument_count 4
 struct syscall_function_t {
     int discriminator;
     union syscall_function_union function;
+    uint64_t *length;
+    size_t extra_arguments[max_extra_argument_count];
 };
 
 #define CKB_LUA_OUT_OF_MEMORY 101
@@ -68,91 +71,76 @@ struct syscall_function_t {
     lua_pushstring(L, _error);                             \
     lua_error(L);
 
-int call_syscall(struct syscall_function_t *f, uint8_t *buf, uint64_t *length,
-                 ...) {
-    size_t offset, index, source, field;
-    va_list va_args;
-    va_start(va_args, length);
+#define PANIC(s, ...)                             \
+    char _error[256];                                      \
+    snprintf_(_error, sizeof(_error) - 1, s, ## __VA_ARGS__); \
+    ckb_exit(-1);
+
+int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
     switch (f->discriminator) {
         case 2:
-            offset = va_arg(va_args, size_t);
-            va_end(va_args);
-            return f->function.v2f(buf, length, offset);
+            return f->function.v2f(buf, f->length, f->extra_arguments[0]);
         case 4:
-            offset = va_arg(va_args, size_t);
-            index = va_arg(va_args, size_t);
-            source = va_arg(va_args, size_t);
-            va_end(va_args);
-            return f->function.v4f(buf, length, offset, index, source);
+            return f->function.v4f(buf, f->length, f->extra_arguments[0],
+                                   f->extra_arguments[1],
+                                   f->extra_arguments[2]);
         case 5:
-            offset = va_arg(va_args, size_t);
-            index = va_arg(va_args, size_t);
-            source = va_arg(va_args, size_t);
-            field = va_arg(va_args, size_t);
-            va_end(va_args);
-            return f->function.v5f(buf, length, offset, index, source, field);
-        default:
-            va_end(va_args);
+            return f->function.v5f(buf, f->length, f->extra_arguments[0],
+                                   f->extra_arguments[1], f->extra_arguments[2],
+                                   f->extra_arguments[3]);
     }
-    printf("invalid discriminator %d", f->discriminator);
-    ckb_exit(-1);
+    PANIC("invalid discriminator %d", f->discriminator);
     return -1;
 }
 
 int call_syscall_get_result(struct syscall_result_t *result,
-                            struct syscall_function_t *f, uint64_t *length, ...) {
+                            struct syscall_function_t *f) {
     int ret = 0;
-    va_list va_args;
-    va_start(va_args, length);
+    uint64_t *length = f->length;
     /* Only obtain the minimal buffer length required */
     if (length != NULL && *length == 0) {
-        ret = call_syscall(f, NULL, length, va_args);
+        ret = call_syscall(f, NULL);
         if (ret == 0) {
             result->length = *length;
         }
-        goto exit;
+        return ret;
     }
 
     size_t buflen = 0;
     if (length == NULL) {
-        ret = call_syscall(f, NULL, &buflen, va_args);
+        ret = call_syscall(f, NULL);
         if (ret != 0) {
-            goto exit;
+            return ret;
         }
     } else {
         buflen = *length;
     }
     uint8_t *buf = malloc(buflen);
     if (buf == NULL) {
-        ret = CKB_LUA_OUT_OF_MEMORY;
-        goto exit;
+        return CKB_LUA_OUT_OF_MEMORY;
     }
 
-    ret = call_syscall(f, buf, length, va_args);
+    ret = call_syscall(f, buf);
     if (ret != 0) {
         free(buf);
-        goto exit;
+        return ret;
     }
 
-    /* We have passed a buffer with a size larger than what is
-     * needed */
+    /* We have passed a buffer with a size larger than what is needed */
     if (length != NULL && *length < buflen) {
         buflen = *length;
+        if (realloc(buf, buflen) == NULL) {
+          PANIC("realloc failed");
+        }
     }
     result->buffer = buf;
     result->length = buflen;
-exit:
-    va_end(va_args);
     return ret;
 }
 
-int call_syscall_push_result(lua_State *L, struct syscall_function_t *f,
-                             uint64_t *length, ...) {
+int call_syscall_push_result(lua_State *L, struct syscall_function_t *f) {
     struct syscall_result_t result = {.buffer = NULL, .length = 0};
-    va_list va_args;
-    va_start(va_args, length);
-    int ret = call_syscall_get_result(&result, f, length, va_args);
-    va_end(va_args);
+    int ret = call_syscall_get_result(&result, f);
     if (ret != 0) {
         lua_pushnil(L);
         lua_pushinteger(L, ret);
@@ -167,36 +155,6 @@ int call_syscall_push_result(lua_State *L, struct syscall_function_t *f,
     free(result.buffer);
     lua_pushnil(L);
     return 2;
-}
-
-int call_syscall_push_result_v2(lua_State *L, syscall_v2 *f, uint64_t *length,
-                                ...) {
-    struct syscall_function_t nf = {.discriminator = 2, .function.v2f = f};
-    va_list va_args;
-    va_start(va_args, length);
-    int ret = call_syscall_push_result(L, &nf, length, va_args);
-    va_end(va_args);
-    return ret;
-}
-
-int call_syscall_push_result_v4(lua_State *L, syscall_v4 *f, uint64_t *length,
-                                ...) {
-    struct syscall_function_t nf = {.discriminator = 4, .function.v4f = f};
-    va_list va_args;
-    va_start(va_args, length);
-    int ret = call_syscall_push_result(L, &nf, length, va_args);
-    va_end(va_args);
-    return ret;
-}
-
-int call_syscall_push_result_v5(lua_State *L, syscall_v5 *f, uint64_t *length,
-                                ...) {
-    struct syscall_function_t nf = {.discriminator = 5, .function.v5f = f};
-    va_list va_args;
-    va_start(va_args, length);
-    int ret = call_syscall_push_result(L, &nf, length, va_args);
-    va_end(va_args);
-    return ret;
 }
 
 #define SET_FIELD(L, v, n) \
@@ -290,7 +248,13 @@ int CKB_LOAD_V2(lua_State *L, syscall_v2 f) {
     setLengthAndOffset(fields, GET_FIELDS_WITH_CHECK(L, fields, 2, 0), &length,
                        &offset);
 
-    return call_syscall_push_result_v2(L, f, length, offset);
+    struct syscall_function_t nf = {
+        .discriminator = 2,
+        .function.v2f = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    return call_syscall_push_result(L, &nf);
 }
 
 int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
@@ -306,8 +270,15 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
     setLengthAndOffset(fields + 2, GET_FIELDS_WITH_CHECK(L, fields, 4, 2) - 2,
                        &length, &offset);
 
-    return call_syscall_push_result_v4(L, f, length, offset, fields[0].arg.size,
-                                       fields[1].arg.size);
+    struct syscall_function_t nf = {
+        .discriminator = 4,
+        .function.v4f = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    nf.extra_arguments[1] = fields[0].arg.size;
+    nf.extra_arguments[2] = fields[1].arg.size;
+    return call_syscall_push_result(L, &nf);
 }
 
 int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
@@ -321,8 +292,16 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
     setLengthAndOffset(fields + 3, GET_FIELDS_WITH_CHECK(L, fields, 5, 3) - 3,
                        &length, &offset);
 
-    return call_syscall_push_result_v5(L, f, length, offset, fields[0].arg.size,
-                                       fields[1].arg.size, fields[2].arg.size);
+    struct syscall_function_t nf = {
+        .discriminator = 5,
+        .function.v5f = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    nf.extra_arguments[1] = fields[0].arg.size;
+    nf.extra_arguments[2] = fields[1].arg.size;
+    nf.extra_arguments[3] = fields[2].arg.size;
+    return call_syscall_push_result(L, &nf);
 }
 
 // Usage:
