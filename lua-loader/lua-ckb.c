@@ -71,9 +71,9 @@ struct syscall_function_t {
     lua_pushstring(L, _error);                             \
     lua_error(L);
 
-#define PANIC(s, ...)                             \
-    char _error[256];                                      \
-    snprintf_(_error, sizeof(_error) - 1, s, ## __VA_ARGS__); \
+#define PANIC(s, ...)                                        \
+    char _error[256];                                        \
+    snprintf_(_error, sizeof(_error) - 1, s, ##__VA_ARGS__); \
     ckb_exit(-1);
 
 int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
@@ -96,25 +96,26 @@ int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
 int call_syscall_get_result(struct syscall_result_t *result,
                             struct syscall_function_t *f) {
     int ret = 0;
-    uint64_t *length = f->length;
     /* Only obtain the minimal buffer length required */
-    if (length != NULL && *length == 0) {
+    if (f->length != NULL && *f->length == 0) {
         ret = call_syscall(f, NULL);
         if (ret == 0) {
-            result->length = *length;
+            result->length = *f->length;
         }
         return ret;
     }
 
     size_t buflen = 0;
-    if (length == NULL) {
+    if (f->length == NULL) {
+        size_t templen = 0;
+        f->length = &templen;
         ret = call_syscall(f, NULL);
         if (ret != 0) {
             return ret;
         }
-    } else {
-        buflen = *length;
     }
+    // Save current length, as syscall will update it
+    buflen = *f->length;
     uint8_t *buf = malloc(buflen);
     if (buf == NULL) {
         return CKB_LUA_OUT_OF_MEMORY;
@@ -126,11 +127,11 @@ int call_syscall_get_result(struct syscall_result_t *result,
         return ret;
     }
 
-    /* We have passed a buffer with a size larger than what is needed */
-    if (length != NULL && *length < buflen) {
-        buflen = *length;
+    /* We have allocated a buffer with a size larger than what is needed */
+    if (*f->length < buflen) {
+        buflen = *f->length;
         if (realloc(buf, buflen) == NULL) {
-          PANIC("realloc failed");
+            PANIC("realloc failed");
         }
     }
     result->buffer = buf;
