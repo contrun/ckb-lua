@@ -77,6 +77,7 @@ static inline void lock_bin(int i) {
 
 static inline void unlock_bin(int i) {}
 
+#if 0
 static int first_set(uint64_t x) {
   // TODO: use RISC-V asm
   static const char debruijn64[64] = {
@@ -97,6 +98,15 @@ static int first_set(uint64_t x) {
   }
   return debruijn64[(x & -x) * 0x022fdd63cc95386dull >> 58];
 }
+
+#else
+
+static int __attribute__((naked)) first_set(uint64_t x) {
+  __asm__(".byte  0x13, 0x15, 0x15, 0x60");
+  __asm__("ret");
+}
+
+#endif
 
 static const unsigned char bin_tab[60] = {
     32, 33, 34, 35, 36, 36, 37, 37, 38, 38, 39, 39, 40, 40, 40,

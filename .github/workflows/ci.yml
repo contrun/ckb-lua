@@ -18,7 +18,6 @@ jobs:
         cd ..
         git clone https://github.com/nervosnetwork/ckb-standalone-debugger
         cd ckb-standalone-debugger/bins
-        git reset --hard 27cb0c6
         cargo install --path .
     - name: Run cases
       run: |

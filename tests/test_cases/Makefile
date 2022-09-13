@@ -39,6 +39,9 @@ ci: evaluate-lua-code-in-cell-data
 	$(call run_ci, bn.lua)
 	$(call run_ci, msgpack-tests.lua)
 
+benchmark:
+	$(call run, msgpack-benchmark.lua)
+	
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
 
