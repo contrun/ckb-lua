@@ -68,39 +68,39 @@ struct syscall_function_t {
     lua_pushstring(L, _error);                             \
     lua_error(L);
 
-int call_syscall(struct syscall_function_t f, uint8_t *buf, uint64_t *length,
+int call_syscall(struct syscall_function_t *f, uint8_t *buf, uint64_t *length,
                  ...) {
     size_t offset, index, source, field;
     va_list va_args;
     va_start(va_args, length);
-    switch (f.discriminator) {
+    switch (f->discriminator) {
         case 2:
             offset = va_arg(va_args, size_t);
             va_end(va_args);
-            return f.function.v2f(buf, length, offset);
+            return f->function.v2f(buf, length, offset);
         case 4:
             offset = va_arg(va_args, size_t);
             index = va_arg(va_args, size_t);
             source = va_arg(va_args, size_t);
             va_end(va_args);
-            return f.function.v4f(buf, length, offset, index, source);
+            return f->function.v4f(buf, length, offset, index, source);
         case 5:
             offset = va_arg(va_args, size_t);
             index = va_arg(va_args, size_t);
             source = va_arg(va_args, size_t);
             field = va_arg(va_args, size_t);
             va_end(va_args);
-            return f.function.v5f(buf, length, offset, index, source, field);
+            return f->function.v5f(buf, length, offset, index, source, field);
         default:
             va_end(va_args);
     }
-    printf("invalid discriminator %d", f.discriminator);
+    printf("invalid discriminator %d", f->discriminator);
     ckb_exit(-1);
     return -1;
 }
 
 int call_syscall_get_result(struct syscall_result_t *result,
-                            struct syscall_function_t f, uint64_t *length, ...) {
+                            struct syscall_function_t *f, uint64_t *length, ...) {
     int ret = 0;
     va_list va_args;
     va_start(va_args, length);
@@ -146,7 +146,7 @@ exit:
     return ret;
 }
 
-int call_syscall_push_result(lua_State *L, struct syscall_function_t f,
+int call_syscall_push_result(lua_State *L, struct syscall_function_t *f,
                              uint64_t *length, ...) {
     struct syscall_result_t result = {.buffer = NULL, .length = 0};
     va_list va_args;
@@ -174,7 +174,7 @@ int call_syscall_push_result_v2(lua_State *L, syscall_v2 *f, uint64_t *length,
     struct syscall_function_t nf = {.discriminator = 2, .function.v2f = f};
     va_list va_args;
     va_start(va_args, length);
-    int ret = call_syscall_push_result(L, nf, length, va_args);
+    int ret = call_syscall_push_result(L, &nf, length, va_args);
     va_end(va_args);
     return ret;
 }
@@ -184,7 +184,7 @@ int call_syscall_push_result_v4(lua_State *L, syscall_v4 *f, uint64_t *length,
     struct syscall_function_t nf = {.discriminator = 4, .function.v4f = f};
     va_list va_args;
     va_start(va_args, length);
-    int ret = call_syscall_push_result(L, nf, length, va_args);
+    int ret = call_syscall_push_result(L, &nf, length, va_args);
     va_end(va_args);
     return ret;
 }
@@ -194,7 +194,7 @@ int call_syscall_push_result_v5(lua_State *L, syscall_v5 *f, uint64_t *length,
     struct syscall_function_t nf = {.discriminator = 5, .function.v5f = f};
     va_list va_args;
     va_start(va_args, length);
-    int ret = call_syscall_push_result(L, nf, length, va_args);
+    int ret = call_syscall_push_result(L, &nf, length, va_args);
     va_end(va_args);
     return ret;
 }
