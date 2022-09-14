@@ -3,11 +3,12 @@
 #include "lauxlib.h"
 #include "lualib.h"
 #include <stdlib.h>
+#include <stdarg.h>
 
 typedef const char *string;
-typedef int syscall_v2(void *, uint64_t *, size_t);
-typedef int syscall_v4(void *, uint64_t *, size_t, size_t, size_t);
-typedef int syscall_v5(void *, uint64_t *, size_t, size_t, size_t, size_t);
+typedef int syscall3(void *, uint64_t *, size_t);
+typedef int syscall5(void *, uint64_t *, size_t, size_t, size_t);
+typedef int syscall6(void *, uint64_t *, size_t, size_t, size_t, size_t);
 
 typedef enum {
     STRING = 1 << 0,
@@ -36,6 +37,20 @@ typedef struct {
     FIELD_ARG arg;
 } FIELD;
 
+union syscall_function_union {
+    syscall3 *f3;
+    syscall5 *f5;
+    syscall6 *f6;
+};
+
+#define max_extra_argument_count 4
+struct syscall_function_t {
+    int num_extra_arguments;
+    union syscall_function_union function;
+    uint64_t *length;
+    size_t extra_arguments[max_extra_argument_count];
+};
+
 #define CKB_LUA_OUT_OF_MEMORY 101
 #define LUA_ERROR_ENCODING 102
 #define LUA_ERROR_SCRIPT_TOO_LONG 103
@@ -51,56 +66,87 @@ typedef struct {
     lua_pushstring(L, _error);                             \
     lua_error(L);
 
-static char *EMPTY_STRING = "";
+#define PANIC(s, ...)                                        \
+    char _error[256];                                        \
+    snprintf_(_error, sizeof(_error) - 1, s, ##__VA_ARGS__); \
+    ckb_exit(-1);
 
-#define CALL_SYSCALL_PUSH_RESULT(L, f, length, ...)                      \
-    int _ret = 0;                                                        \
-    size_t _ml = 0;                                                      \
-    if (length == NULL) {                                                \
-        /* just get buffer length */                                     \
-        length = &_ml;                                                   \
-        _ret = f(NULL, length, __VA_ARGS__);                             \
-        if (_ret) {                                                      \
-            lua_pushstring(L, EMPTY_STRING);                             \
-            lua_pushinteger(L, _ret);                                    \
-            return 2;                                                    \
-        }                                                                \
-    } else if (*length == 0) {                                           \
-        /* get buffer length and return */                               \
-        _ret = f(NULL, length, __VA_ARGS__);                             \
-        if (_ret != 0) {                                                 \
-            lua_pushinteger(L, 0);                                       \
-            lua_pushinteger(L, _ret);                                    \
-        } else {                                                         \
-            lua_pushinteger(L, *length);                                 \
-            lua_pushnil(L);                                              \
-        }                                                                \
-        return 2;                                                        \
-    }                                                                    \
-    /* Save the original length as syscall may override it */            \
-    _ml = *length;                                                       \
-    uint8_t *_buf = malloc(*length);                                     \
-    if (_buf == NULL) {                                                  \
-        /* malloc failed */                                              \
-        lua_pushstring(L, EMPTY_STRING);                                 \
-        lua_pushinteger(L, -CKB_LUA_OUT_OF_MEMORY);                      \
-        return 2;                                                        \
-    }                                                                    \
-    _ret = f(_buf, length, __VA_ARGS__);                                 \
-    if (_ret != 0) {                                                     \
-        free(_buf);                                                      \
-        lua_pushstring(L, EMPTY_STRING);                                 \
-        lua_pushinteger(L, _ret);                                        \
-        return 2;                                                        \
-    }                                                                    \
-    /* We have passed a buffer with a size larger than what is needed */ \
-    if (_ml > *length) {                                                 \
-        _ml = *length;                                                   \
-    }                                                                    \
-    lua_pushlstring(L, (char *)_buf, _ml);                               \
-    free(_buf);                                                          \
-    lua_pushnil(L);                                                      \
+int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
+    switch (f->num_extra_arguments) {
+        case 1:
+            return f->function.f3(buf, f->length, f->extra_arguments[0]);
+        case 3:
+            return f->function.f5(buf, f->length, f->extra_arguments[0],
+                                  f->extra_arguments[1], f->extra_arguments[2]);
+        case 4:
+            return f->function.f6(buf, f->length, f->extra_arguments[0],
+                                  f->extra_arguments[1], f->extra_arguments[2],
+                                  f->extra_arguments[3]);
+    }
+    PANIC("invalid number of extra arguments %d", f->num_extra_arguments);
+    return -1;
+}
+
+int call_syscall_get_result(BUFFER_T *result, struct syscall_function_t *f) {
+    int ret = 0;
+    /* Only obtain the minimal buffer length required */
+    if (f->length != NULL && *f->length == 0) {
+        ret = call_syscall(f, NULL);
+        if (ret == 0) {
+            result->length = *f->length;
+        }
+        return ret;
+    }
+
+    size_t buflen = 0;
+    if (f->length == NULL) {
+        size_t templen = 0;
+        f->length = &templen;
+        ret = call_syscall(f, NULL);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+    // Save current length, as syscall will update it
+    buflen = *f->length;
+    uint8_t *buf = malloc(buflen);
+    if (buf == NULL) {
+        return CKB_LUA_OUT_OF_MEMORY;
+    }
+
+    ret = call_syscall(f, buf);
+    if (ret != 0) {
+        free(buf);
+        return ret;
+    }
+
+    /* We have allocated a buffer with a size larger than what is needed */
+    if (*f->length < buflen) {
+        buflen = *f->length;
+    }
+    result->buffer = buf;
+    result->length = buflen;
+    return ret;
+}
+
+int call_syscall_push_result(lua_State *L, struct syscall_function_t *f) {
+    BUFFER_T result = {.buffer = NULL, .length = 0};
+    int ret = call_syscall_get_result(&result, f);
+    if (ret != 0) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ret);
+        return 2;
+    }
+    if (result.buffer == NULL) {
+        lua_pushinteger(L, result.length);
+        lua_pushnil(L);
+        return 2;
+    }
+    lua_pushlstring(L, (char *)result.buffer, result.length);
+    free(result.buffer);
+    lua_pushnil(L);
     return 2;
+}
 
 #define SET_FIELD(L, v, n) \
     lua_pushinteger(L, v); \
@@ -169,8 +215,8 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
     return args_count;
 }
 
-void setLengthAndOffset(FIELD *fields, int fields_count, uint64_t **length,
-                        size_t *offset) {
+void set_length_and_offset(FIELD *fields, int fields_count, uint64_t **length,
+                           size_t *offset) {
     switch (fields_count) {
         case 0:
             break;
@@ -185,18 +231,24 @@ void setLengthAndOffset(FIELD *fields, int fields_count, uint64_t **length,
     }
 }
 
-int CKB_LOAD_V2(lua_State *L, syscall_v2 f) {
+int CKB_LOAD3(lua_State *L, syscall3 f) {
     FIELD fields[] = {{"length?", UINT64}, {"offset?", SIZE_T}};
 
     uint64_t *length = NULL;
     size_t offset = 0;
-    setLengthAndOffset(fields, GET_FIELDS_WITH_CHECK(L, fields, 2, 0), &length,
-                       &offset);
+    set_length_and_offset(fields, GET_FIELDS_WITH_CHECK(L, fields, 2, 0),
+                          &length, &offset);
 
-    CALL_SYSCALL_PUSH_RESULT(L, f, length, offset);
+    struct syscall_function_t nf = {
+        .num_extra_arguments = 1,
+        .function.f3 = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    return call_syscall_push_result(L, &nf);
 }
 
-int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
+int CKB_LOAD5(lua_State *L, syscall5 f) {
     FIELD fields[] = {
         {"index", SIZE_T},
         {"source", SIZE_T},
@@ -206,14 +258,22 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
 
     uint64_t *length = NULL;
     size_t offset = 0;
-    setLengthAndOffset(fields + 2, GET_FIELDS_WITH_CHECK(L, fields, 4, 2) - 2,
-                       &length, &offset);
+    set_length_and_offset(fields + 2,
+                          GET_FIELDS_WITH_CHECK(L, fields, 4, 2) - 2, &length,
+                          &offset);
 
-    CALL_SYSCALL_PUSH_RESULT(L, f, length, offset, fields[0].arg.size,
-                             fields[1].arg.size);
+    struct syscall_function_t nf = {
+        .num_extra_arguments = 3,
+        .function.f5 = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    nf.extra_arguments[1] = fields[0].arg.size;
+    nf.extra_arguments[2] = fields[1].arg.size;
+    return call_syscall_push_result(L, &nf);
 }
 
-int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
+int CKB_LOAD6(lua_State *L, syscall6 f) {
     FIELD fields[] = {
         {"index", SIZE_T},   {"source", SIZE_T},  {"field", SIZE_T},
         {"length?", UINT64}, {"offset?", SIZE_T},
@@ -221,21 +281,30 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
 
     uint64_t *length = NULL;
     size_t offset = 0;
-    setLengthAndOffset(fields + 3, GET_FIELDS_WITH_CHECK(L, fields, 5, 3) - 3,
-                       &length, &offset);
+    set_length_and_offset(fields + 3,
+                          GET_FIELDS_WITH_CHECK(L, fields, 5, 3) - 3, &length,
+                          &offset);
 
-    CALL_SYSCALL_PUSH_RESULT(L, f, length, offset, fields[0].arg.size,
-                             fields[1].arg.size, fields[2].arg.size);
+    struct syscall_function_t nf = {
+        .num_extra_arguments = 4,
+        .function.f6 = f,
+        .length = length,
+    };
+    nf.extra_arguments[0] = offset;
+    nf.extra_arguments[1] = fields[0].arg.size;
+    nf.extra_arguments[2] = fields[1].arg.size;
+    nf.extra_arguments[3] = fields[2].arg.size;
+    return call_syscall_push_result(L, &nf);
 }
 
 // Usage:
-//     hexDump(desc, addr, len, perLine);
+//     hex_dump(desc, addr, len, perLine);
 //         desc:    if non-NULL, printed as a description before hex dump.
 //         addr:    the address to start dumping from.
 //         len:     the number of bytes to dump.
 //         perLine: number of bytes on each output line.
 
-void hexDump(const char *desc, const void *addr, const int len, int perLine) {
+void hex_dump(const char *desc, const void *addr, const int len, int perLine) {
     // Silently ignore silly per-line values.
 
     if (perLine < 4 || perLine > 64) perLine = 16;
@@ -308,8 +377,8 @@ int lua_ckb_dump(lua_State *L) {
     int args_count = GET_FIELDS_WITH_CHECK(L, fields, 3, 1);
     string desc = (args_count >= 2) ? fields[1].arg.str : "";
     int perline = (args_count >= 3) ? fields[2].arg.integer : 0;
-    hexDump(desc, fields[0].arg.buffer.buffer, fields[0].arg.buffer.length,
-            perline);
+    hex_dump(desc, fields[0].arg.buffer.buffer, fields[0].arg.buffer.length,
+             perline);
     return 0;
 }
 
@@ -332,47 +401,43 @@ int lua_ckb_debug(lua_State *L) {
 }
 
 int lua_ckb_load_tx_hash(lua_State *L) {
-    return CKB_LOAD_V2(L, ckb_load_tx_hash);
+    return CKB_LOAD3(L, ckb_load_tx_hash);
 }
 
 int lua_ckb_load_script_hash(lua_State *L) {
-    return CKB_LOAD_V2(L, ckb_load_script_hash);
+    return CKB_LOAD3(L, ckb_load_script_hash);
 }
 
-int lua_ckb_load_script(lua_State *L) {
-    return CKB_LOAD_V2(L, ckb_load_script);
-}
+int lua_ckb_load_script(lua_State *L) { return CKB_LOAD3(L, ckb_load_script); }
 
 int lua_ckb_load_transaction(lua_State *L) {
-    return CKB_LOAD_V2(L, ckb_load_transaction);
+    return CKB_LOAD3(L, ckb_load_transaction);
 }
 
-int lua_ckb_load_cell(lua_State *L) { return CKB_LOAD_V4(L, ckb_load_cell); }
+int lua_ckb_load_cell(lua_State *L) { return CKB_LOAD5(L, ckb_load_cell); }
 
-int lua_ckb_load_input(lua_State *L) { return CKB_LOAD_V4(L, ckb_load_input); }
+int lua_ckb_load_input(lua_State *L) { return CKB_LOAD5(L, ckb_load_input); }
 
-int lua_ckb_load_header(lua_State *L) {
-    return CKB_LOAD_V4(L, ckb_load_header);
-}
+int lua_ckb_load_header(lua_State *L) { return CKB_LOAD5(L, ckb_load_header); }
 
 int lua_ckb_load_witness(lua_State *L) {
-    return CKB_LOAD_V4(L, ckb_load_witness);
+    return CKB_LOAD5(L, ckb_load_witness);
 }
 
 int lua_ckb_load_cell_data(lua_State *L) {
-    return CKB_LOAD_V4(L, ckb_load_cell_data);
+    return CKB_LOAD5(L, ckb_load_cell_data);
 }
 
 int lua_ckb_load_cell_by_field(lua_State *L) {
-    return CKB_LOAD_V5(L, ckb_load_cell_by_field);
+    return CKB_LOAD6(L, ckb_load_cell_by_field);
 }
 
 int lua_ckb_load_input_by_field(lua_State *L) {
-    return CKB_LOAD_V5(L, ckb_load_input_by_field);
+    return CKB_LOAD6(L, ckb_load_input_by_field);
 }
 
 int lua_ckb_load_header_by_field(lua_State *L) {
-    return CKB_LOAD_V5(L, ckb_load_header_by_field);
+    return CKB_LOAD6(L, ckb_load_header_by_field);
 }
 
 static const luaL_Reg ckb_syscall[] = {
