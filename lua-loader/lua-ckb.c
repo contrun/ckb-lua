@@ -123,9 +123,6 @@ int call_syscall_get_result(BUFFER_T *result, struct syscall_function_t *f) {
     /* We have allocated a buffer with a size larger than what is needed */
     if (*f->length < buflen) {
         buflen = *f->length;
-        if (realloc(buf, buflen) == NULL) {
-            PANIC("realloc failed");
-        }
     }
     result->buffer = buf;
     result->length = buflen;
