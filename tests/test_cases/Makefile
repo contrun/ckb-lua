@@ -25,7 +25,7 @@ evaluate-lua-code-in-cell-data:
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- lua-loader 2>&1 | fgrep 'hello world'
 
 memory_leak.json:
-	./gen_tx_with_large_witnesses.sh $@ 8192
+	./gen_tx_with_large_witnesses.sh $@ 81920
 
 memory_leak: memory_leak.json
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file $^ --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file test_$@.lua --bin ../../build/lua-loader.debug -- lua-loader -r  2>&1 | fgrep 'Run result: 0'
