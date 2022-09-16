@@ -130,10 +130,20 @@ static void createargtable(lua_State *L, char **argv, int argc, int script) {
     int i, narg;
     if (script == argc) script = 0; /* no script name? */
     narg = argc - (script + 1);     /* number of positive indices */
-    lua_createtable(L, narg, script + 1);
+    // Our argv does not contain the program name, so argc may be zero
+    // narg thus may be less than zero.
+    if (narg < 0) {
+        narg = 0;
+    }
+
+    lua_createtable(L, narg, argc - narg);
+    // Push progname to table as our argv does not have a program name.
+    lua_pushstring(L, progname);
+    lua_rawseti(L, -2, -script);
     for (i = 0; i < argc; i++) {
         lua_pushstring(L, argv[i]);
-        lua_rawseti(L, -2, i - script);
+        // We have pushed progname
+        lua_rawseti(L, -2, 1 + i - script);
     }
     lua_setglobal(L, "arg");
 }
@@ -255,7 +265,7 @@ static int pushargs(lua_State *L) {
 static int collectargs(char **argv, int *first) {
     int args = 0;
     int i;
-    for (i = 1; argv[i] != NULL; i++) {
+    for (i = 0; argv[i] != NULL; i++) {
         *first = i;
         if (argv[i][0] != '-') /* not an option? */
             return args;       /* stop handling options */
@@ -359,9 +369,8 @@ static int pmain(lua_State *L) {
     char **argv = (char **)lua_touserdata(L, 2);
     int script;
     int args = collectargs(argv, &script);
-    luaL_checkversion(L); /* check that interpreter has correct version */
-    if (argv[0] && argv[0][0]) progname = argv[0];
-    if (args == has_error) {       /* bad arg? */
+    luaL_checkversion(L);    /* check that interpreter has correct version */
+    if (args == has_error) { /* bad arg? */
         print_usage(argv[script]); /* 'script' has index of bad arg. */
         return 0;
     }
@@ -375,9 +384,8 @@ static int pmain(lua_State *L) {
         if (!run_from_file(L)) return 0;
     }
     // No arguments found, trying to load lua code from cell data
-    // argc == 0 is necessary
-    // See https://github.com/XuJiandong/ckb-lua/issues/25 for details
-    if (argc == 0 || argc == 1) {
+    // Note we don't push program name to argv, thus we check argc == 0 instead of argc = 1
+    if (argc == 0) {
         if (load_lua_code_from_cell_data(L)) return 0;
     }
     lua_pushboolean(L, 1); /* signal no errors */
