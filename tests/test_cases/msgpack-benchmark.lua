@@ -1,4 +1,6 @@
-local msgpack = require('msgpack')
+package.path = "./?.bc;" .. package.path
+
+local msgpack = require('msgpack_compiled')
 do
 	local bytes = assert(msgpack.encode(1, -5, math.pi, 'Test!', true, false, { a = 1, b = 2 }))
 	local a, b, c, d, e, f, g = assert(msgpack.decode(bytes))
