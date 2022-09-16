@@ -24,3 +24,8 @@ jobs:
         cd tests/official && make ci
         cd ../test_cases && make ci
         cd ../ckb-c-stdlib-tests && make all-via-docker && make ci
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: lua-loader
+        path: build/lua-loader*
