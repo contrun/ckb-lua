@@ -330,7 +330,7 @@ static int run_from_file(lua_State *L) {
         return 0;
     }
     buf[count] = 0;
-    int status = dostring(L, buf, "=(read file)");
+    int status = dochunk(L, luaL_loadbuffer(L, buf, count, "=(read file)"));
     if (status != LUA_OK)
         return 0;
     else
@@ -384,7 +384,8 @@ static int pmain(lua_State *L) {
         if (!run_from_file(L)) return 0;
     }
     // No arguments found, trying to load lua code from cell data
-    // Note we don't push program name to argv, thus we check argc == 0 instead of argc = 1
+    // Note we don't push program name to argv, thus we check argc == 0 instead
+    // of argc = 1
     if (argc == 0) {
         if (load_lua_code_from_cell_data(L)) return 0;
     }

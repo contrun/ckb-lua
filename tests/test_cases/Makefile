@@ -52,7 +52,7 @@ ci: evaluate-lua-code-in-cell-data partial_loading memory_leak
 	$(call run_ci, msgpack-tests.lua)
 
 benchmark:
-	$(call run, msgpack-benchmark.lua)
+	$(call run, msgpack-benchmark.bc)
 
 test:
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file bn.lua --bin ../../build/lua-loader.debug -- -r
