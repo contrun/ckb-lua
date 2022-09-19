@@ -33,3 +33,4 @@ for i = 0, 15 do
 	for j = 1, i do assert(array[j] == j) end
 end
 
+print('done')
