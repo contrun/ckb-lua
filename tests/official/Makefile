@@ -79,6 +79,63 @@ ci:
 	$(call run_ci, pm.lua)
 	$(call run_ci, big.lua)
 
+#
+# Some test cases are removed. They will try to consume all the memory.
+# On native machine, it can reach up to several GB but on ckb-vm it only has 4M.
+# It's unfair.
+#
+perf-ckb-vm:
+	$(call run_ci, literals.lua)
+	$(call run_ci, sort.lua)
+	$(call run_ci, strings.lua)
+	$(call run_ci, math.lua)
+	$(call run_ci, api.lua)
+	$(call run_ci, bwcoercion.lua)
+	$(call run_ci, calls.lua)
+	$(call run_ci, closure.lua)
+	$(call run_ci, code.lua)
+	$(call run_ci, coroutine.lua)
+	$(call run_ci, events.lua)
+	$(call run_ci, gengc.lua)
+	$(call run_ci, goto.lua)
+	$(call run_ci, tpack.lua)
+	$(call run_ci, tracegc.lua)
+	$(call run_ci, utf8.lua)
+	$(call run_ci, vararg.lua)
+	$(call run_ci, gc.lua)
+	$(call run_ci, bitwise.lua)
+	$(call run_ci, constructs.lua)
+	$(call run_ci, db.lua)
+	$(call run_ci, nextvar.lua)
+	$(call run_ci, pm.lua)
+	$(call run_ci, big.lua)
+
+perf-native:
+	lua literals.lua
+	lua sort.lua
+	lua strings.lua
+	lua math.lua
+	lua api.lua
+	lua bwcoercion.lua
+	lua calls.lua
+	lua closure.lua
+	lua code.lua
+	lua coroutine.lua
+	lua events.lua
+	lua gengc.lua
+	lua goto.lua
+	lua tpack.lua
+	lua tracegc.lua
+	lua utf8.lua
+	lua vararg.lua
+	lua gc.lua
+	lua bitwise.lua
+	lua constructs.lua
+	lua db.lua
+	lua nextvar.lua
+	lua pm.lua
+	lua big.lua
+
 compile:
 	luac -s -o sort.bc sort.lua
 

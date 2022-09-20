@@ -147,7 +147,7 @@ end
 function toomanyidx ()
   local a = {}
   local st, msg = pcall(function ()
-    for i = 1, math.huge do
+    for i = 1, 0x1000000 do
       if i % (0x100000) == 0 then
         io.stderr:write("(", i // 2^20, " M)")
       end

@@ -468,7 +468,7 @@ if not _soft then
   local function checkstackmessage (m)
     print("(expected stack overflow after " .. C .. " calls)")
     C = 0    -- prepare next count
-    return (string.find(m, stack_overflow_message))
+    return (string.find(m, stack_overflow_message)) or (string.find(m, "stack overflow"))
   end
   -- repeated stack overflows (to check stack recovery)
   assert(checkstackmessage(doit('y()')))
