@@ -172,10 +172,7 @@ assert(dofile('locals.lua') == 5)
 dofile('constructs.lua')
 dofile('code.lua', true)
 if not _G._soft then
-  report('big.lua')
-  local f = coroutine.wrap(assert(loadfile('big.lua')))
-  assert(f() == 'b')
-  assert(f() == 'a')
+  dofile('big.lua')
 end
 dofile('cstack.lua')
 dofile('nextvar.lua')

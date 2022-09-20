@@ -111,10 +111,10 @@ deep(180)
 print"testing tail calls"
 
 function deep (n) if n>0 then return deep(n-1) else return 101 end end
-assert(deep(30000) == 101)
+assert(deep(3000) == 101)
 a = {}
 function a:deep (n) if n>0 then return self:deep(n-1) else return 101 end end
-assert(a:deep(30000) == 101)
+assert(a:deep(3000) == 101)
 
 do   -- tail calls x varargs
   local function foo (x, ...) local a = {...}; return x, a[1], a[2] end
@@ -151,9 +151,8 @@ do   -- tail calls x varargs
 end
 
 
-
 do   -- tail calls x chain of __call
-  local n = 10000   -- depth
+  local n = 1000   -- depth
 
   local function foo ()
     if n == 0 then return 1023
@@ -162,7 +161,7 @@ do   -- tail calls x chain of __call
   end
 
   -- build a chain of __call metamethods ending in function 'foo'
-  for i = 1, 100 do
+  for i = 1, 10 do
     foo = setmetatable({}, {__call = foo})
   end
 

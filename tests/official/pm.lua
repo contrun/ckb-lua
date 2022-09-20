@@ -240,7 +240,7 @@ checkerror("invalid use of '%%'", string.gsub, "alo", ".", "%x")
 
 if not _soft then
   print("big strings")
-  local a = string.rep('a', 300000)
+  local a = string.rep('a', 30000)
   assert(string.find(a, '^a*.?$'))
   assert(not string.find(a, '^a*.?b$'))
   assert(string.find(a, '^a-.?$'))

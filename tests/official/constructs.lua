@@ -351,7 +351,7 @@ local function createcases (n)
 end
 
 -- do not do too many combinations for soft tests
-local level = _soft and 3 or 4
+local level = _soft and 2 or 3
 
 cases[1] = basiccases
 for i = 2, level do cases[i] = createcases(i) end
@@ -365,7 +365,7 @@ for n = 1, level do
     IX = false
     assert(p() == v[2] and IX == not not v[2])
     i = i + 1
-    if i % 60000 == 0 then print('+') end
+    if i % 6000 == 0 then print('+') end
   end
 end
 ------------------------------------------------------------------

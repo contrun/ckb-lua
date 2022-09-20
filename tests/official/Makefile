@@ -20,6 +20,35 @@ all:
 	$(call run, sort.lua)
 	$(call run, strings.lua)
 	$(call run, math.lua)
+	$(call run, api.lua)
+	$(call run, bwcoercion.lua)
+	$(call run, calls.lua)
+	$(call run, closure.lua)
+	$(call run, code.lua)
+	$(call run, coroutine.lua)
+	$(call run, events.lua)
+	$(call run, gengc.lua)
+	$(call run, goto.lua)
+	$(call run, heavy.lua)
+	$(call run, tpack.lua)
+	$(call run, tracegc.lua)
+	$(call run, utf8.lua)
+	$(call run, vararg.lua)
+	$(call run, gc.lua)
+	$(call run, bitwise.lua)
+	$(call run, constructs.lua)
+	$(call run, db.lua)
+	$(call run, errors.lua)
+	$(call run, nextvar.lua)
+	$(call run, pm.lua)
+	$(call run, big.lua)
+
+# failed tests:
+# attrib runs some file operations
+# cstack requires fwrite
+# files has too many unsupported io operation
+# main has too many unsupported io operation
+# verybig creates a big lua script file, and then run it.
 
 ci:
 	$(call run_ci, locals.lua)
@@ -27,6 +56,28 @@ ci:
 	$(call run_ci, sort.lua)
 	$(call run_ci, strings.lua)
 	$(call run_ci, math.lua)
+	$(call run_ci, api.lua)
+	$(call run_ci, bwcoercion.lua)
+	$(call run_ci, calls.lua)
+	$(call run_ci, closure.lua)
+	$(call run_ci, code.lua)
+	$(call run_ci, coroutine.lua)
+	$(call run_ci, events.lua)
+	$(call run_ci, gengc.lua)
+	$(call run_ci, goto.lua)
+	$(call run_ci, heavy.lua)
+	$(call run_ci, tpack.lua)
+	$(call run_ci, tracegc.lua)
+	$(call run_ci, utf8.lua)
+	$(call run_ci, vararg.lua)
+	$(call run_ci, gc.lua)
+	$(call run_ci, bitwise.lua)
+	$(call run_ci, constructs.lua)
+	$(call run_ci, db.lua)
+	$(call run_ci, errors.lua)
+	$(call run_ci, nextvar.lua)
+	$(call run_ci, pm.lua)
+	$(call run_ci, big.lua)
 
 compile:
 	luac -s -o sort.bc sort.lua

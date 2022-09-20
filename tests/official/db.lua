@@ -341,8 +341,12 @@ function f(a,b)
   assert(debug.setlocal(2, 3, "pera") == "AA".."AA")
   assert(debug.setlocal(2, 4, "maçã") == "B")
   x = debug.getinfo(2)
-  assert(x.func == g and x.what == "Lua" and x.name == 'g' and
-         x.nups == 2 and string.find(x.source, "^@.*db%.lua$"))
+  assert(x.func == g)
+  assert(x.what == "Lua")
+  assert(x.name == 'g')
+  assert(x.nups == 2)
+  -- Currently source name is not db.lua in ckb-vm
+  -- assert(string.find(x.source, "^@.*db%.lua$"))
   glob = glob+1
   assert(debug.getinfo(1, "l").currentline == L+1)
   assert(debug.getinfo(1, "l").currentline == L+2)
@@ -731,10 +735,11 @@ end
 
 local co = coroutine.create(f)
 coroutine.resume(co, 3)
-checktraceback(co, {"yield", "db.lua", "db.lua", "db.lua", "db.lua"})
-checktraceback(co, {"db.lua", "db.lua", "db.lua", "db.lua"}, 1)
-checktraceback(co, {"db.lua", "db.lua", "db.lua"}, 2)
-checktraceback(co, {"db.lua"}, 4)
+-- Currently source name is not db.lua in ckb-vm
+-- checktraceback(co, {"yield", "db.lua", "db.lua", "db.lua", "db.lua"})
+-- checktraceback(co, {"db.lua", "db.lua", "db.lua", "db.lua"}, 1)
+-- checktraceback(co, {"db.lua", "db.lua", "db.lua"}, 2)
+-- checktraceback(co, {"db.lua"}, 4)
 checktraceback(co, {}, 40)
 
 
@@ -929,7 +934,7 @@ do
     end
   end
 
-  for d = 1, 51, 10 do
+  for d = 1, 31, 10 do
     for l = 1, d do
       -- use coroutines to ensure complete control of the stack
       coroutine.wrap(checkdeep)(d, l)
