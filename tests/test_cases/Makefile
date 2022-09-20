@@ -22,7 +22,10 @@ define run_pretty_result
 endef
 
 evaluate-lua-code-in-cell-data:
+	# The data is lua code `print('hello world')`
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
+	# The data is lua bytecode of `print('hello world')`
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_bytecode_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
 
 memory_leak.json:
 	./gen_tx_with_large_witnesses.sh $@ 81920

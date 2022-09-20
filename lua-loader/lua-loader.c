@@ -157,21 +157,20 @@ static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
-int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
-                            uint8_t hash_type) {
+int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
+                            const uint8_t *code_hash, uint8_t hash_type) {
     size_t index = 0;
     int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
     if (ret) {
         return ret;
     }
-    unsigned char *buf = NULL;
-    uint64_t buflen = 0;
+    char *buf = NULL;
+    size_t buflen = 0;
     ret = ckb_load_cell_data(NULL, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
     if (ret) {
         return ret;
     }
-    // Need to append '\0' as buffer should be a valid c string
-    buf = malloc(buflen + 1);
+    buf = malloc(buflen);
     if (buf == NULL) {
         return CKB_LUA_OUT_OF_MEMORY;
     }
@@ -179,9 +178,7 @@ int load_lua_code_with_hash(lua_State *L, const uint8_t *code_hash,
     if (ret) {
         return ret;
     }
-    // append '\0' to buffer
-    memset(buf + buflen, 0, 1);
-    return dostring(L, (const char *)buf, __func__);
+    return dochunk(L, luaL_loadbuffer(L, buf, buflen, __func__));
 }
 
 #define SCRIPT_SIZE 32768
@@ -212,10 +209,11 @@ int load_lua_code_from_cell_data(lua_State *L) {
     if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
         return -LUA_ERROR_ARGUMENTS_LEN;
     }
+    uint16_t lua_loader_args = *(args_bytes_seg.ptr);
     uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
     uint8_t hash_type =
         *(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
-    return load_lua_code_with_hash(L, code_hash, hash_type);
+    return load_lua_code_with_hash(L, lua_loader_args, code_hash, hash_type);
 }
 
 /*
