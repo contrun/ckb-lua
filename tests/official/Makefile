@@ -131,7 +131,7 @@ perf-native:
 	lua gc.lua
 	lua bitwise.lua
 	lua constructs.lua
-	lua db.lua
+	# lua db.lua
 	lua nextvar.lua
 	lua pm.lua
 	lua big.lua
