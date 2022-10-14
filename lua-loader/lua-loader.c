@@ -172,7 +172,7 @@ int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
     }
     buf = malloc(buflen);
     if (buf == NULL) {
-        return CKB_LUA_OUT_OF_MEMORY;
+        return LUA_ERROR_OUT_OF_MEMORY;
     }
     ret = ckb_load_cell_data(buf, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
     if (ret) {
@@ -207,7 +207,7 @@ int load_lua_code_from_cell_data(lua_State *L) {
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
     if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
-        return -LUA_ERROR_ARGUMENTS_LEN;
+        return -LUA_ERROR_INVALID_ARGUMENT;
     }
     uint16_t lua_loader_args = *(args_bytes_seg.ptr);
     uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;

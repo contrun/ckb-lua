@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "blockchain.h"
+
 typedef const char *string;
 typedef int syscall3(void *, uint64_t *, size_t);
 typedef int syscall5(void *, uint64_t *, size_t, size_t, size_t);
@@ -51,10 +53,11 @@ struct syscall_function_t {
     size_t extra_arguments[max_extra_argument_count];
 };
 
-#define CKB_LUA_OUT_OF_MEMORY 101
+#define LUA_ERROR_INTERNAL 100
+#define LUA_ERROR_OUT_OF_MEMORY 101
 #define LUA_ERROR_ENCODING 102
 #define LUA_ERROR_SCRIPT_TOO_LONG 103
-#define LUA_ERROR_ARGUMENTS_LEN 104
+#define LUA_ERROR_INVALID_ARGUMENT 104
 
 /////////////////////////////////////////////////////
 // Utilities
@@ -111,7 +114,7 @@ int call_syscall_get_result(BUFFER_T *result, struct syscall_function_t *f) {
     buflen = *f->length;
     uint8_t *buf = malloc(buflen);
     if (buf == NULL) {
-        return CKB_LUA_OUT_OF_MEMORY;
+        return LUA_ERROR_OUT_OF_MEMORY;
     }
 
     ret = call_syscall(f, buf);
@@ -217,12 +220,14 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
 
 void set_length_and_offset(FIELD *fields, int fields_count, uint64_t **length,
                            size_t *offset) {
+    *length = NULL;
     switch (fields_count) {
         case 0:
             break;
 
         case 1:
             *length = &fields[0].arg.u64;
+            break;
 
         case 2:
             *length = &fields[0].arg.u64;
@@ -231,7 +236,7 @@ void set_length_and_offset(FIELD *fields, int fields_count, uint64_t **length,
     }
 }
 
-int CKB_LOAD3(lua_State *L, syscall3 f) {
+struct syscall_function_t CKB_GET_SYSCALL3_ARGUMENTS(lua_State *L, syscall3 f) {
     FIELD fields[] = {{"length?", UINT64}, {"offset?", SIZE_T}};
 
     uint64_t *length = NULL;
@@ -245,6 +250,11 @@ int CKB_LOAD3(lua_State *L, syscall3 f) {
         .length = length,
     };
     nf.extra_arguments[0] = offset;
+    return nf;
+}
+
+int CKB_LOAD3(lua_State *L, syscall3 f) {
+    struct syscall_function_t nf = CKB_GET_SYSCALL3_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
@@ -273,7 +283,7 @@ int CKB_LOAD5(lua_State *L, syscall5 f) {
     return call_syscall_push_result(L, &nf);
 }
 
-int CKB_LOAD6(lua_State *L, syscall6 f) {
+struct syscall_function_t CKB_GET_SYSCALL6_ARGUMENTS(lua_State *L, syscall6 f) {
     FIELD fields[] = {
         {"index", SIZE_T},   {"source", SIZE_T},  {"field", SIZE_T},
         {"length?", UINT64}, {"offset?", SIZE_T},
@@ -294,6 +304,11 @@ int CKB_LOAD6(lua_State *L, syscall6 f) {
     nf.extra_arguments[1] = fields[0].arg.size;
     nf.extra_arguments[2] = fields[1].arg.size;
     nf.extra_arguments[3] = fields[2].arg.size;
+    return nf;
+}
+
+int CKB_LOAD6(lua_State *L, syscall6 f) {
+    struct syscall_function_t nf = CKB_GET_SYSCALL6_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
@@ -410,6 +425,58 @@ int lua_ckb_load_script_hash(lua_State *L) {
 
 int lua_ckb_load_script(lua_State *L) { return CKB_LOAD3(L, ckb_load_script); }
 
+void lua_pushsegment(lua_State *L, mol_seg_t seg) {
+    if (seg.size == 0) {
+        lua_pushnil(L);
+    } else {
+        lua_pushlstring(L, (char *)seg.ptr, seg.size);
+    }
+}
+
+int lua_ckb_load_and_unpack_script(lua_State *L) {
+    int ret;
+    struct syscall_function_t f =
+        CKB_GET_SYSCALL3_ARGUMENTS(L, ckb_load_script);
+    if (f.length != NULL && *f.length == 0) {
+        ret = LUA_ERROR_INVALID_ARGUMENT;
+        goto fail;
+    }
+    BUFFER_T result = {.buffer = NULL, .length = 0};
+    ret = call_syscall_get_result(&result, &f);
+    if (ret != 0) {
+        goto fail;
+    }
+    if (result.buffer == NULL) {
+        ret = LUA_ERROR_INTERNAL;
+        goto fail;
+    }
+
+    mol_seg_t script_seg;
+    script_seg.ptr = result.buffer;
+    script_seg.size = result.length;
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+    mol_seg_t code_hash = MolReader_Script_get_code_hash(&script_seg);
+    mol_seg_t hash_type_seg = MolReader_Script_get_hash_type(&script_seg);
+    uint8_t hash_type = *((uint8_t *)hash_type_seg.ptr);
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes = MolReader_Bytes_raw_bytes(&args_seg);
+
+    lua_pushsegment(L, code_hash);
+    lua_pushinteger(L, hash_type);
+    lua_pushsegment(L, args_bytes);
+    lua_pushnil(L);
+    return 4;
+fail:
+    lua_pushnil(L);
+    lua_pushnil(L);
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 4;
+}
+
 int lua_ckb_load_transaction(lua_State *L) {
     return CKB_LOAD3(L, ckb_load_transaction);
 }
@@ -447,6 +514,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
+    {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
     {"load_cell", lua_ckb_load_cell},
@@ -468,7 +536,11 @@ LUAMOD_API int luaopen_ckb(lua_State *L) {
     SET_FIELD(L, -CKB_ITEM_MISSING, "ITEM_MISSING")
     SET_FIELD(L, -CKB_LENGTH_NOT_ENOUGH, "LENGTH_NOT_ENOUGH")
     SET_FIELD(L, -CKB_INVALID_DATA, "INVALID_DATA")
-    SET_FIELD(L, -CKB_LUA_OUT_OF_MEMORY, "OUT_OF_MEMORY")
+    SET_FIELD(L, -LUA_ERROR_INTERNAL, "LUA_ERROR_INTERNAL")
+    SET_FIELD(L, -LUA_ERROR_OUT_OF_MEMORY, "LUA_ERROR_OUT_OF_MEMORY")
+    SET_FIELD(L, -LUA_ERROR_ENCODING, "LUA_ERROR_ENCODING")
+    SET_FIELD(L, -LUA_ERROR_SCRIPT_TOO_LONG, "LUA_ERROR_SCRIPT_TOO_LONG")
+    SET_FIELD(L, -LUA_ERROR_INVALID_ARGUMENT, "LUA_ERROR_INVALID_ARGUMENT")
 
     SET_FIELD(L, CKB_SOURCE_INPUT, "SOURCE_INPUT")
     SET_FIELD(L, CKB_SOURCE_OUTPUT, "SOURCE_OUTPUT")

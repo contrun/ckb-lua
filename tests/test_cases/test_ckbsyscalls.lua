@@ -168,3 +168,9 @@ for _, source in pairs(sources) do
     assert(error)
   end
 end
+
+local code_hash, hash_type, args, error = ckb.load_and_unpack_script()
+assert(not error)
+assert(hash_type == 2)
+assert(code_hash == "\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad")
+assert(args == "\x66\x6f\x6f\x62\x61\x72")
