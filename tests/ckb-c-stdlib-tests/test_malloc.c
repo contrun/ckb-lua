@@ -201,5 +201,11 @@ int main() {
   reset();
   test_malloc_extreme();
   reset();
+
+  uint8_t mem[1024*10];
+  malloc_config((uintptr_t)mem, (uintptr_t)(mem+1024*10));
+  test_malloc2();
+  reset();
+
   return 0;
 }

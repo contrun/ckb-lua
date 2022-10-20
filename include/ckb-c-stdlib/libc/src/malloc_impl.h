@@ -49,13 +49,21 @@ static inline void a_and_64(volatile uint64_t *p, uint64_t v) { *p &= v; }
 static inline void a_or_64(volatile uint64_t *p, uint64_t v) { *p |= v; }
 
 static uintptr_t s_program_break = 0;
+static uintptr_t s_brk_min = CKB_BRK_MIN;
+static uintptr_t s_brk_max = CKB_BRK_MAX;
+
+void malloc_config(uintptr_t min, uintptr_t max) {
+  s_brk_min = min;
+  s_brk_max = max;
+  s_program_break = 0;
+}
 
 void *_sbrk(uintptr_t incr) {
   if (!s_program_break) {
-    s_program_break = CKB_BRK_MIN;
+    s_program_break = s_brk_min;
     s_program_break += -s_program_break & (CKB_PAGE_SIZE - 1);
   }
-  if ((s_program_break + incr) > CKB_BRK_MAX) {
+  if ((s_program_break + incr) > s_brk_max) {
     return (void *)-1;
   }
 
