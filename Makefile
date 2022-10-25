@@ -33,7 +33,7 @@ build/lua-loader: build/lua-loader.o lualib/liblua.a
 	$(OBJCOPY) --strip-debug --strip-all $@
 
 fmt:
-	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.c
+	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h
 
 clean-local:
 	rm -f build/*.o

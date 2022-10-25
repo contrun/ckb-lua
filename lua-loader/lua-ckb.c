@@ -53,12 +53,6 @@ struct syscall_function_t {
     size_t extra_arguments[max_extra_argument_count];
 };
 
-#define LUA_ERROR_INTERNAL 100
-#define LUA_ERROR_OUT_OF_MEMORY 101
-#define LUA_ERROR_ENCODING 102
-#define LUA_ERROR_SCRIPT_TOO_LONG 103
-#define LUA_ERROR_INVALID_ARGUMENT 104
-
 /////////////////////////////////////////////////////
 // Utilities
 /////////////////////////////////////////////////////

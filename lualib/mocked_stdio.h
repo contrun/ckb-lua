@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../include/ckb_cell_fs.h"
+
 #define BUFSIZ 512
 #define EOF (-1)
 #define SEEK_SET 0
@@ -16,7 +18,8 @@
 #define _IONBF 2
 
 typedef struct FILE {
-    void *placeholder;
+    FSFile *file;
+    uint32_t offset;
 } FILE;
 
 FILE *stdin;

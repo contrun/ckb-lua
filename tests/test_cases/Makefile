@@ -21,11 +21,18 @@ define run_pretty_result
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file sample_data1.json --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file $(1)  --bin ../../build/lua-loader.debug -- -r |& sed 's/DEBUG.*SCRIPT>//g' | sed ':a;N;$!ba;s/\n/NEWLINE/g' | sed 's/NEWLINENEWLINE/\n/g' | sed 's/NEWLINE//g'
 endef
 
+save-and-load-file-system-data:
+	RUST_LOG=debug $(CKB-DEBUGGER) --bin ../../build/lua-loader.debug -- -t 2>&1 | fgrep 'Run result: 0'
+
 evaluate-lua-code-in-cell-data:
-	# The data is lua code `print('hello world')`
+	# The data are lua code `print('hello world')`
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
-	# The data is lua bytecode of `print('hello world')`
+	# The data are lua bytecode of `print('hello world')`
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_bytecode_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
+	# The data are lua file system with a `main.lua` whose content is `print('hello world!')`
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_fs_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- -f 2>&1 | fgrep 'hello world!'
+	# The data are lua file system with a `main.lua` which requires a module from the file system
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_fs_code_with_module_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- -f 2>&1 | fgrep 'hello world!'
 
 memory_leak.json:
 	./gen_tx_with_large_witnesses.sh $@ 81920
@@ -45,7 +52,7 @@ all:
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, bn.lua)
 
-ci: evaluate-lua-code-in-cell-data partial_loading memory_leak
+ci: evaluate-lua-code-in-cell-data save-and-load-file-system-data partial_loading memory_leak
 	$(call run_ci, test_require.lua)
 	$(call run_ci, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)

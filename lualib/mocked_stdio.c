@@ -1,6 +1,9 @@
 
 #include "mocked_stdio.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 FILE *stdin;
 FILE *stdout;
 FILE *stderr;
@@ -50,6 +53,18 @@ static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
         ckb_exit(-1);                                                  \
     } while (0)
 
+FILE *allocfile() {
+    FILE *file = malloc(sizeof(FILE));
+    file->file = 0;
+    file->offset = 0;
+    return file;
+}
+
+void freefile(FILE *file) {
+    file->file->rc -= 1;
+    free((void *)file);
+}
+
 int remove(const char *__filename) {
     NOT_IMPL(remove);
     return 0;
@@ -79,7 +94,7 @@ int fclose(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9009, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(fclose);
+    freefile(stream);
     return 0;
 }
 
@@ -92,8 +107,17 @@ FILE *fopen(const char *path, const char *mode) {
     if (s_local_access_enabled) {
         return (void *)ckb_syscall(9003, path, mode, 0, 0, 0, 0);
     }
-    NOT_IMPL(fopen);
-    return 0;
+
+    FILE *file = allocfile();
+    if (file == 0) {
+        return 0;
+    }
+
+    int ret = ckb_get_file(path, &file->file);
+    if (ret != 0) {
+        return 0;
+    }
+    return file;
 }
 
 FILE *freopen(const char *path, const char *mode, FILE *stream) {
@@ -153,17 +177,16 @@ int fgetc(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(fgetc);
-    return 0;
+    if (stream == 0 || stream->file->rc == 0 ||
+        stream->offset == stream->file->size) {
+        return -1;  // EOF
+    }
+    unsigned char *c = (unsigned char *)stream->file->content + stream->offset;
+    stream->offset++;
+    return *c;
 }
 
-int getc(FILE *stream) {
-    if (s_local_access_enabled) {
-        return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
-    }
-    NOT_IMPL(getc);
-    return 0;
-}
+int getc(FILE *stream) { return fgetc(stream); }
 
 int getchar(void) {
     NOT_IMPL(getchar);
@@ -215,12 +238,39 @@ int ungetc(int __c, FILE *__stream) {
     return 0;
 }
 
+int isvalidfile(FILE *stream) {
+    if (stream == 0 || stream->file->rc == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+void mustbevaildfile(FILE *stream) {
+    if (isvalidfile(stream) != 0) {
+        ckb_exit(1);
+    }
+}
+
 size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9005, ptr, size, nitems, stream, 0, 0);
     }
-    NOT_IMPL(fread);
-    return 0;
+    mustbevaildfile(stream);
+    // TODO: How do we handle error here?
+    if (stream->offset == stream->file->size) {
+        return 0;
+    }
+    // TODO: handle the case size * nitems is greater than uint32_t max
+    // handle size * ntimes overflowing
+    uint32_t bytes_to_read = (uint32_t)size * (uint32_t)nitems;
+    if (bytes_to_read > stream->file->size - stream->offset) {
+        bytes_to_read = stream->file->size - stream->offset;
+    }
+    memcpy(ptr, stream->file->content + stream->offset, bytes_to_read);
+    stream->offset = stream->offset + bytes_to_read;
+    // The return value should be the number of items written to the ptr
+    uint32_t s = size;
+    return (bytes_to_read + s - 1) / s;
 }
 
 size_t fwrite(const void *__ptr, size_t __size, size_t __n, FILE *__s) {
@@ -252,7 +302,9 @@ int feof(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9006, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(feof);
+    if (stream->offset == stream->file->size) {
+        return 1;
+    }
     return 0;
 }
 
@@ -260,7 +312,9 @@ int ferror(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9007, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(ferror);
+    if (stream == 0 || stream->file->rc == 0) {
+        return 1;
+    }
     return 0;
 }
 
