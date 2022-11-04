@@ -441,3 +441,41 @@ int main(int argc, char **argv) {
     lua_close(L);
     return (result && status == LUA_OK) ? 0 : -1;
 }
+
+// Running malloc inside the embedded lua instance may interfere with the
+// hosting program malloc operations. To avoid such problem, the hosting program
+// should pre-alloc enough memory for exxclusive usage of the lua program. Also
+// note that, creating new lua state requries malloc, thus we configure the
+// memory on initializing lua stete instead of adding a separate function to
+// configure memory bounds after creation.
+__attribute__((visibility("default"))) void *lua_create_instance(
+    uintptr_t min, uintptr_t max) {
+    malloc_config(min, max);
+    lua_State *L = luaL_newstate(); /* create state */
+    if (L == NULL) {
+        return NULL;
+    }
+    luaL_openlibs(L); /* open standard libraries */
+    luaopen_ckb(L);
+    lua_gc(L, LUA_GCGEN, 0, 0); /* GC in generational mode */
+    return (void *)L;
+}
+
+__attribute__((visibility("default"))) int lua_run_code(void *l,
+                                                        const char *code,
+                                                        size_t code_size,
+                                                        char *name) {
+    lua_State *L = l;
+    if (L == NULL) {
+        ckb_exit(CKB_LUA_INVALID_STATE);
+    }
+    int status = dochunk(L, luaL_loadbuffer(L, code, code_size, name));
+    return status;
+}
+
+__attribute__((visibility("default"))) void lua_close_instance(void *L) {
+    if (L == NULL) {
+        ckb_exit(CKB_LUA_INVALID_STATE);
+    }
+    lua_close((lua_State *)L);
+}

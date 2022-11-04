@@ -1,4 +1,5 @@
 
+CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TARGET := riscv64-unknown-linux-gnu
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
@@ -8,17 +9,25 @@ CFLAGS := -fPIC -O3 -fno-builtin -nostdinc -nostdlib -nostartfiles -fvisibility=
 
 LDFLAGS := -nostdlib -nostartfiles -fno-builtin -Wl,-static -fdata-sections -ffunction-sections -Wl,--gc-sections
 
+DOCKER_USER := $(shell id -u):$(shell id -g)
+DOCKER_EXTRA_FLAGS ?=
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 PORT ?= 9999
 
-all: lualib/liblua.a build/lua-loader
+all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
 
+docker-interactive:
+	docker run --user ${DOCKER_USER} --rm -it -v "${CURRENT_DIR}:/code" --workdir /code --entrypoint /bin/bash ${DOCKER_EXTRA_FLAGS} ${BUILDER_DOCKER}
+
 lualib/liblua.a:
 	make -C lualib liblua.a
+
+build/dylibtest: tests/test_cases/dylibtest.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/lua-loader.o: lua-loader/lua-loader.c
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -32,13 +41,20 @@ build/lua-loader: build/lua-loader.o lualib/liblua.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
+build/libckblua.so: build/lua-loader.o lualib/liblua.a
+	$(LD) $(LDFLAGS) -Wl,--dynamic-list lua-loader/libckblua.syms -fpic -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	cp $@ $@.debug
+	$(OBJCOPY) --strip-debug --strip-all $@
+
 fmt:
-	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h
+	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h tests/test_cases/*.c
 
 clean-local:
 	rm -f build/*.o
 	rm -f build/lua-loader
-	rm -f build/lua-loader.debug
+	rm -f build/lua-loader*
+	rm -f build/libckblua*
+	rm -f build/dylibtest
 
 clean: clean-local
 	make -C lualib clean
