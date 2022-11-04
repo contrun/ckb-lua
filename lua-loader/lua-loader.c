@@ -29,9 +29,8 @@ int exit(int c) {
     return 0;
 }
 void enable_local_access(int b);
-
-static int s_fs_access_enabled = 0;
-void enable_fs_access(int b) { s_fs_access_enabled = b; }
+void enable_fs_access(int b);
+int fs_access_enabled();
 
 void abort() { ckb_exit(-1); }
 
@@ -164,7 +163,7 @@ static int dostring(lua_State *L, const char *s, const char *name) {
 }
 
 int load_lua_code(lua_State *L, char *buf, size_t buflen) {
-    if (!s_fs_access_enabled) {
+    if (!fs_access_enabled()) {
         return dochunk(L, luaL_loadbuffer(L, buf, buflen, __func__));
     }
 

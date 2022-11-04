@@ -13,6 +13,10 @@ int ckb_exit(signed char code);
 static int s_local_access_enabled = 0;
 void enable_local_access(int b) { s_local_access_enabled = b; }
 
+static int s_fs_access_enabled = 0;
+void enable_fs_access(int b) { s_fs_access_enabled = b; }
+int fs_access_enabled() { return s_fs_access_enabled; }
+
 #define memory_barrier() asm volatile("fence" ::: "memory")
 
 static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
@@ -94,6 +98,9 @@ int fclose(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9009, stream, 0, 0, 0, 0, 0);
     }
+    if (!fs_access_enabled()) {
+        NOT_IMPL(fclose);
+    }
     freefile(stream);
     return 0;
 }
@@ -106,6 +113,10 @@ int fflush(FILE *__stream) {
 FILE *fopen(const char *path, const char *mode) {
     if (s_local_access_enabled) {
         return (void *)ckb_syscall(9003, path, mode, 0, 0, 0, 0);
+    }
+
+    if (!fs_access_enabled()) {
+        NOT_IMPL(fopen);
     }
 
     FILE *file = allocfile();
@@ -176,6 +187,9 @@ int sscanf(const char *__s, const char *__format, ...) {
 int fgetc(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
+    }
+    if (!fs_access_enabled()) {
+        NOT_IMPL(fgetc);
     }
     if (stream == 0 || stream->file->rc == 0 ||
         stream->offset == stream->file->size) {
@@ -255,6 +269,9 @@ size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9005, ptr, size, nitems, stream, 0, 0);
     }
+    if (!fs_access_enabled()) {
+        NOT_IMPL(fread);
+    }
     mustbevaildfile(stream);
     // TODO: How do we handle error here?
     if (stream->offset == stream->file->size) {
@@ -302,6 +319,9 @@ int feof(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9006, stream, 0, 0, 0, 0, 0);
     }
+    if (!fs_access_enabled()) {
+        NOT_IMPL(feof);
+    }
     if (stream->offset == stream->file->size) {
         return 1;
     }
@@ -311,6 +331,9 @@ int feof(FILE *stream) {
 int ferror(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9007, stream, 0, 0, 0, 0, 0);
+    }
+    if (!fs_access_enabled()) {
+        NOT_IMPL(ferror);
     }
     if (stream == 0 || stream->file->rc == 0) {
         return 1;
