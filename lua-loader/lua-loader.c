@@ -226,7 +226,7 @@ int load_lua_code_from_cell_data(lua_State *L) {
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
     if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
-        return -LUA_ERROR_INVALID_ARGUMENT;
+        return LUA_ERROR_INVALID_ARGUMENT;
     }
     uint16_t lua_loader_args = *(args_bytes_seg.ptr);
     uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
@@ -467,7 +467,7 @@ __attribute__((visibility("default"))) int lua_run_code(void *l,
                                                         char *name) {
     lua_State *L = l;
     if (L == NULL) {
-        ckb_exit(CKB_LUA_INVALID_STATE);
+        ckb_exit(LUA_ERROR_INVALID_STATE);
     }
     int status = dochunk(L, luaL_loadbuffer(L, code, code_size, name));
     return status;
@@ -475,7 +475,7 @@ __attribute__((visibility("default"))) int lua_run_code(void *l,
 
 __attribute__((visibility("default"))) void lua_close_instance(void *L) {
     if (L == NULL) {
-        ckb_exit(CKB_LUA_INVALID_STATE);
+        ckb_exit(LUA_ERROR_INVALID_STATE);
     }
     lua_close((lua_State *)L);
 }

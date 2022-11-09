@@ -89,7 +89,7 @@ int test_make_file_system_evaluate_code(lua_State *L, FSFile *files,
 
     void *buf = malloc(buflen);
     if (buf == NULL) {
-        return -LUA_ERROR_OUT_OF_MEMORY;
+        return LUA_ERROR_OUT_OF_MEMORY;
     }
 
     ret = ckb_save_fs(files, count, buf, &buflen);

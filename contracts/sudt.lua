@@ -104,14 +104,14 @@ load = function(self, raw)
 end
 
 function get_owner_lock_hash() 
-  _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
+  local _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
   if err ~= nil then
-    return -ERROR_LOAD_SCRIPT
+    return ERROR_LOAD_SCRIPT
   end
 
   -- args must be a hash of the owner private key
   if #args ~= (OWNER_LOCK_HASH_SIZE + LUA_LOADER_ARGS_SIZE) then
-    return -ERROR_INVALID_SCRIPT
+    return ERROR_INVALID_SCRIPT
   end
 
   owner_lock_hash = string.sub(args, LUA_LOADER_ARGS_SIZE+1, -1)
@@ -127,11 +127,11 @@ function main()
   local index = 0
   while true do
     local data, err = ckb.load_cell_by_field(index, ckb.SOURCE_INPUT, ckb.CELL_FIELD_LOCK_HASH)
-    if err == -ckb.INDEX_OUT_OF_BOUND then
+    if err == ckb.INDEX_OUT_OF_BOUND then
       break
     end
     if err ~= nil then
-      return -ERROR_LOAD_LOCK_HASH
+      return ERROR_LOAD_LOCK_HASH
     end
     print("lock hash")
     ckb.dump(data)
@@ -147,19 +147,19 @@ function main()
   local input_sum = bn.new(AMOUNT_BITS, 0)
   while true do
     local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_INPUT, AMOUNT_BYTES)
-    if err == -ckb.INDEX_OUT_OF_BOUND then
+    if err == ckb.INDEX_OUT_OF_BOUND then
       break
     end
     if err ~= nil then
-      return -ERROR_LOAD_CELL_DATA
+      return ERROR_LOAD_CELL_DATA
     end
     if #data < AMOUNT_BYTES then
-      return -ERROR_INVALID_CELL_DATA
+      return ERROR_INVALID_CELL_DATA
     end
     tmp_number:load(data)
     input_sum = input_sum + tmp_number
     if input_sum.overflow then
-      return -ERROR_OVERFLOWING
+      return ERROR_OVERFLOWING
     end
     index = index + 1
   end
@@ -168,26 +168,26 @@ function main()
   local output_sum = bn.new(AMOUNT_BITS, 0)
   while true do
     local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_OUTPUT, AMOUNT_BYTES)
-    if err == -ckb.INDEX_OUT_OF_BOUND then
+    if err == ckb.INDEX_OUT_OF_BOUND then
       break
     end
     if err ~= nil then
-      return -ERROR_LOAD_CELL_DATA
+      return ERROR_LOAD_CELL_DATA
     end
     if #data < AMOUNT_BYTES then
-      return -ERROR_INVALID_CELL_DATA
+      return ERROR_INVALID_CELL_DATA
     end
     tmp_number:load(string.sub(data, 1, AMOUNT_BYTES))
     output_sum = output_sum + tmp_number
     if output_sum.overflow then
-      return -ERROR_OVERFLOWING
+      return ERROR_OVERFLOWING
     end
     index = index + 1
   end
 
   print("input_sum", input_sum, "output_sum", output_sum, "\n")
   if input_sum < output_sum then
-    return -ERROR_INVALID_AMOUNT
+    return ERROR_INVALID_AMOUNT
   end
 
   return 0
