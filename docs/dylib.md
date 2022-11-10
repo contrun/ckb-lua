@@ -1,4 +1,4 @@
-# Calling Lua code from your ckb contracts
+# Use Lua Code in CKB Script
 
 To facilitate the development of contracts on ckb platform, we recently ported Lua, a scripting language famous for its simplicity and ease of use, to the ckb-vm. Ckb developers can now both run the standalone Lua interpreter in the ckb platform and embed Lua code into their main ckb contracts. This greatly lower the barrier to entry for ckb contracts development.
 
