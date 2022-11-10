@@ -14,7 +14,7 @@ make all-via-docker
 There are 2 ways to use this project:
 1. Embedded
 
-Use `build/libckblua.so` as a shared library. TODO
+Use `build/libckblua.so` as a shared library. See [dylib.md](./docs/dylib.md) for a detailed tutorial on how to use `build/libckblua.so`.
 
 2. Standalone(used as script)
 
