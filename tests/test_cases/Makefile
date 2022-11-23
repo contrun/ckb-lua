@@ -54,6 +54,11 @@ partial_loading: partial_loading.json
 # I use the following script to update it, which requires https://github.com/contrun/ckb-x64-simulator/blob/fe0e53d7b5e86db63388b913c26faf9f1c2e6ae3/src/tests/dump.sh to dump hash
 # jq ".tx.outputs[0].type.args = \"$(CKB_TX_FILE=dylib.json dump.sh cell_dep_cell_data_hash |& grep -oE '0x([0-9]|[a-f]){1,2}' | xargs -n 1 printf '%02x' | xargs -n 1 printf '0x0000%s02')\"" dylib.json | sponge dylib.json
 dylibtest:
+	# Test if exits successfully
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep 'Run result: 0'
+	# Test whether we can call exit when exit is enabled
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep -v 'Code after exit_script should be unreachable'
+	# Test if we can print hello world
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep 'hello world'
 	# Run lua code many times to ensure no memory leak.
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- -c 100 2>&1 | fgrep 'Run result: 0'

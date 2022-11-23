@@ -64,6 +64,7 @@ Three functions have been exported in the shared library.
 1. `void *lua_create_instance(uintptr_t min, uintptr_t max)`
 2. `int lua_run_code(void *l, const char *code, size_t code_size, char *name)`
 3. `void close_lua_instance(void *L)`
+4. `void lua_toggle_exit(void *L, int enabled)`
 
 ### `lua_create_instance`
 
@@ -71,17 +72,21 @@ To create new Lua instance, we may use `lua_create_instance`. In order to avoid 
 
 ### `lua_run_code`
 
-The actual evaluation of Lua code can be initiated by calling`lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging.
+The actual evaluation of Lua code can be initiated by calling `lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging. The lua script may early return control to the host program by calling `ckb.exit_script(code)`. In this case, the return code of this function is the parameter `code`. If no `ckb.exit_script` is called, 0 will be returned if lua script is executed successfully, otherwise a negative number will be returned. Lua script should pass non-negative number to `ckb.exit_script` in order to distinguish lua interpreter error and delibrately set return code.
 
 ### `lua_close_instance`
 
 Calling `lua_close_instance` will release all the resources used by Lua. It takes the opaque pointer returned from `lua_create_instance` as a parameter.
 
+### `lua_toggle_exit`
+
+`lua_toggle_exit` can be used to toggle whether `ckb.exit` is enabled. Since `ckb.exit(code)` can stop the execution of the whole VM and return `code` to ckb-vm. It may be undesirable in some situation. By default, we have disabled it. Users may call `lua_toggle_exit(l, 1)` to enable it (here parameter `l` is the lua instance).
+
 ## Lua Functions
 
 ### Functions in Lua Standard Library
 
-Most of the functions in Lua standard library have been ported to ckb-lua. You can expect all the platform-independent functions to work. But some platform-dependent functions like `os.rename` (removing a file from the file system) will not exist in ckb-lua.
+Most of the functions in Lua standard library have been ported to ckb-lua. You can expect all the platform-independent functions to work. But some platform-dependent functions (e.g. all functions in the module `os`) are not provided in ckb-lua.
 
 TODO: add list of functions that are not available in ckb-lua.
 
@@ -145,7 +150,7 @@ The prototype of ckb-lua is now somewhat complete. We are now gathering feedback
 
 ### Partial Loading
 
-The functions here may take a variable length of arguments. There is a [partial loading like mechanism](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading) for Lua functions. Functions below with partial loading supported may be additionally passed to the argument length and offset. The behavior of these Lua functions depends is classified as follows
+The functions here may take a variable length of arguments. There is a [partial loading like mechanism](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading) for Lua functions. Functions below with partial loading supported may be additionally passed to the argument length and offset. The behavior of these Lua functions is classified as follows
 
 - Both length and offset are omitted.
 In this case, the whole data would be loaded, e.g. calling `ckb.load_witness(0, ckb.SOURCE_INPUT)` would load the whole witness of input cell of index 0.
@@ -160,7 +165,7 @@ In this case, the data starting from offset of length would be returned, e.g. ca
 
 ### Error Handling
 
-Most of them may return an error as the last argument. The error is a non-zero integer that represents the kind of error that happened during the execution of the function. Callers should check errors to be nil before using other arguments.
+Most of they may return an error as the last argument. The error is a non-zero integer that represents the kind of error that happened during the execution of the function. Callers should check errors to be nil before using other arguments.
 
 ### More Examples
 
@@ -187,13 +192,24 @@ description: exit the ckb-vm execution
 
 calling example: `ckb.exit(code)`
 
-arguments: code (return code)
+arguments: code (exit code)
 
 return values: none
 
 side effects: exit the ckb-vm execution
 
 see also: [`ckb_exit` syscall](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#exit)
+
+#### `ckb.exit_script`
+description: stop lua script execution, return to the ckb-vm caller
+
+calling example: `ckb.exit_script(code)`
+
+arguments: code (this will be the return code of `lua_run_code`, should be positive, see `lua_run_code` above for details)
+
+return values: none
+
+side effects: stop lua script execution, return to the ckb-vm caller
 
 #### `ckb.load_tx_hash`
 description: load the transaction hash

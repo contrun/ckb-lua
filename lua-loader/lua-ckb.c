@@ -391,15 +391,33 @@ int lua_ckb_dump(lua_State *L) {
     return 0;
 }
 
-int lua_ckb_exit(lua_State *L) {
+int lua_get_int_code(lua_State *L) {
     FIELD fields[] = {{"code", INTEGER}};
     int code = 0;
     int args_count = GET_FIELDS_WITH_CHECK(L, fields, 1, 0);
     if (args_count == 1) {
         code = fields[0].arg.integer;
     }
-    ckb_exit(code);
+    return code;
+}
+
+int lua_ckb_exit(lua_State *L) {
+    if (s_lua_exit_enabled) {
+        int code = lua_get_int_code(L);
+        ckb_exit(code);
+    } else {
+        luaL_error(L, "exit in ckb-lua is not enabled");
+    }
     return 0;
+}
+
+int lua_ckb_exit_script(lua_State *L) {
+    int code = lua_get_int_code(L);
+    lua_createtable(L, 0, 1);
+    lua_pushstring(L, CKB_RETURN_CODE_KEY);
+    lua_pushinteger(L, code);
+    lua_rawset(L, -3);
+    return lua_error(L);
 }
 
 int lua_ckb_debug(lua_State *L) {
@@ -504,6 +522,7 @@ int lua_ckb_load_header_by_field(lua_State *L) {
 static const luaL_Reg ckb_syscall[] = {
     {"dump", lua_ckb_dump},
     {"exit", lua_ckb_exit},
+    {"exit_script", lua_ckb_exit_script},
     {"debug", lua_ckb_debug},
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},

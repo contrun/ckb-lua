@@ -2,4 +2,5 @@
   lua_create_instance;
   lua_run_code;
   lua_close_instance;
+  lua_enable_exit;
 };
