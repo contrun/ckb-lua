@@ -27,6 +27,8 @@ save-and-load-file-system-data:
 evaluate-lua-code-in-cell-data:
 	# The data are lua code `print('hello world')`
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
+	# The data are lua code `print('hello world')` located in the output cell
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_code_in_output_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
 	# The data are lua bytecode of `print('hello world')`
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_bytecode_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- 2>&1 | fgrep 'hello world'
 	# The data are lua file system with a `main.lua` whose content is `print('hello world!')`
