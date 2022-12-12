@@ -211,6 +211,19 @@ return values: none
 
 side effects: stop lua script execution, return to the ckb-vm caller
 
+#### `ckb.mount`
+description: load the cell data and mount the file system witin in
+
+calling example: `ckb.mount(source, index)`
+
+arguments: source (the source of the cell to load), index (the index of the cell to load within all cells with source `source`)
+
+return values: err (may be nil object to represent possible error)
+
+side effects: the files within the file system will be available to use if no error happened
+
+see also: [file system documentation](./fs.md)
+
 #### `ckb.load_tx_hash`
 description: load the transaction hash
 

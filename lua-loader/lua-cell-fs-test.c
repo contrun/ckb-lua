@@ -97,6 +97,7 @@ int test_make_file_system_evaluate_code(lua_State *L, FSFile *files,
         return ret;
     }
 
+    ckb_reset_fs();
     ret = ckb_load_fs(buf, buflen);
     if (ret) {
         return ret;

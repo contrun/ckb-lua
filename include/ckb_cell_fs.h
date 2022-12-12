@@ -11,10 +11,15 @@ typedef struct FSEntry {
     FSBlob content;
 } FSEntry;
 
-typedef struct CellFileSystem {
+typedef struct CellFileSystemNode {
     uint32_t count;
     FSEntry *files;
     void *start;
+} CellFileSystemNode;
+
+typedef struct CellFileSystem {
+    CellFileSystemNode *current;
+    struct CellFileSystem *next;
 } CellFileSystem;
 
 typedef struct FSFile {
@@ -31,8 +36,10 @@ int get_file(const CellFileSystem *fs, const char *filename, FSFile **f);
 
 int ckb_get_file(const char *filename, FSFile **file);
 
-int load_fs(CellFileSystem *fs, void *buf, uint64_t buflen);
+int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen);
 
 int ckb_load_fs(void *buf, uint64_t buflen);
+
+void ckb_reset_fs();
 
 #endif

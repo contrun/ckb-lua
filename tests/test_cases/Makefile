@@ -35,6 +35,8 @@ evaluate-lua-code-in-cell-data:
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_fs_code_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- -f 2>&1 | fgrep 'hello world!'
 	# The data are lua file system with a `main.lua` which requires a module from the file system
 	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_fs_code_with_module_in_cell_data.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- -f 2>&1 | fgrep 'hello world!'
+	# The data are lua file system with a `main.lua` which mounts a module from output cell data
+	RUST_LOG=debug $(CKB-DEBUGGER) --tx-file lua_mount_fs_function.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/lua-loader.debug -- -f 2>&1 | fgrep 'hello world!'
 
 memory_leak.json:
 	./gen_tx_with_large_witnesses.sh $@ 81920

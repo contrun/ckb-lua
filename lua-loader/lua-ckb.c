@@ -420,6 +420,39 @@ int lua_ckb_exit_script(lua_State *L) {
     return lua_error(L);
 }
 
+int ckb_load_fs_from_source_and_index(uint64_t source, uint64_t index) {
+    char *buf = NULL;
+    size_t buflen = 0;
+    int ret = ckb_load_cell_data(NULL, &buflen, 0, index, source);
+    if (ret) {
+        return ret;
+    }
+    buf = malloc(buflen);
+    if (buf == NULL) {
+        return LUA_ERROR_OUT_OF_MEMORY;
+    }
+    ret = ckb_load_cell_data(buf, &buflen, 0, index, source);
+    if (ret) {
+        free(buf);
+        return ret;
+    }
+    return ckb_load_fs(buf, buflen);
+}
+
+int lua_ckb_mount(lua_State *L) {
+    FIELD fields[] = {{"source", INTEGER}, {"index", INTEGER}};
+    GET_FIELDS_WITH_CHECK(L, fields, 2, 2);
+    int source = fields[0].arg.integer;
+    int index = fields[1].arg.integer;
+    int ret = ckb_load_fs_from_source_and_index(source, index);
+    if (ret != 0) {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
 int lua_ckb_debug(lua_State *L) {
     FIELD fields[] = {{"msg", STRING}};
     GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
@@ -524,6 +557,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"exit", lua_ckb_exit},
     {"exit_script", lua_ckb_exit_script},
     {"debug", lua_ckb_debug},
+    {"mount", lua_ckb_mount},
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},

@@ -1,0 +1,94 @@
+{
+  "mock_info": {
+    "inputs": [
+      {
+        "input": {
+          "previous_output": {
+            "tx_hash": "0xa98c57135830e1b91345948df6c4b8870828199a786b26f09f7dec4bc27a73da",
+            "index": "0x0"
+          },
+          "since": "0x0"
+        },
+        "output": {
+          "capacity": "0x4b9f96b00",
+          "lock": {
+            "args": "0x",
+            "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "hash_type": "data1"
+          },
+          "type": null
+        },
+        "data": "0x616263"
+      }
+    ],
+    "cell_deps": [
+      {
+        "cell_dep": {
+          "out_point": {
+            "tx_hash": "0xfcd1b3ddcca92b1e49783769e9bf606112b3f8cf36b96cac05bf44edcf5377e6",
+            "index": "0x0"
+          },
+          "dep_type": "code"
+        },
+        "output": {
+          "capacity": "0x702198d000",
+          "lock": {
+            "args": "0x",
+            "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "hash_type": "data1"
+          },
+          "type": {
+            "args": "0x",
+            "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "hash_type": "data1"
+          }
+        },
+        "data": "0x01000000000000000900000009000000270000006d61696e2e6c756100636b622e6d6f756e7428322c2030290a72657175697265276d796d6f64756c65272e666f6f2829"
+      }
+    ],
+    "header_deps": []
+  },
+  "tx": {
+    "version": "0x0",
+    "cell_deps": [
+      {
+        "out_point": {
+          "tx_hash": "0xfcd1b3ddcca92b1e49783769e9bf606112b3f8cf36b96cac05bf44edcf5377e6",
+          "index": "0x0"
+        },
+        "dep_type": "code"
+      }
+    ],
+    "header_deps": [],
+    "inputs": [
+      {
+        "previous_output": {
+          "tx_hash": "0xa98c57135830e1b91345948df6c4b8870828199a786b26f09f7dec4bc27a73da",
+          "index": "0x0"
+        },
+        "since": "0x0"
+      }
+    ],
+    "outputs": [
+      {
+        "capacity": "0x0",
+        "lock": {
+          "args": "0x",
+          "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "hash_type": "data1"
+        },
+        "type": {
+          "args": "0x0000ca3e189f8c438a68b808d0bdc65715a67b9ddae9bcdc485aa08839a820b8738502",
+          "code_hash": "0xfa93982d582a0f3302a96ac34944d14b41d53549b9fb2ab284eafc1d021588ad",
+          "hash_type": "data1"
+        }
+      }
+    ],
+    "witnesses": [
+      "0x7769746e657373666f6f626172"
+    ],
+    "outputs_data": [
+      "0x01000000000000000d0000000d0000005a0000006d796d6f64756c652e6c7561006c6f63616c206d796d6f64756c65203d207b7d0a66756e6374696f6e206d796d6f64756c652e666f6f28290a202020207072696e74282768656c6c6f20776f726c642127290a656e640a72657475726e206d796d6f64756c650a"
+    ]
+  }
+}
