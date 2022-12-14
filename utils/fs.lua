@@ -57,7 +57,87 @@ local function pack(files, stream)
   end
 end
 
-local outfile = "lfs"
-local stream = assert(io.open(outfile, "w+"))
-local files = {["main.lua"] = "../contracts/hello.lua"}
-pack(files, stream)
+local function usage(msg)  
+  if msg ~= nil then
+    print(msg)
+  end
+  print(arg[0] .. ' pack output_file [files] | ' .. arg[0] ..  ' unpack input_file [directory]')
+end
+
+local function do_pack()  
+  if #arg == 1 then
+    usage('You must specify the output file.')
+    os.exit()
+  end
+
+  local outfile = arg[2]
+  local stream = assert(io.open(outfile, "w+"))
+  local files = {}
+  local n = 0
+  if #arg ~= 2 then
+    for i = 3,#arg do
+      n = n+1
+      file = arg[i]
+      print("adding file " .. file)
+      files[file] = file
+    end
+  else
+    for file in io.lines() do
+      n = n+1
+      print("adding file " .. file)
+      files[file] = file
+    end
+  end
+  if n == 0 then
+    usage('You must at least specify one file to pack')
+    os.exit()
+  end
+  pack(files, stream)
+end
+
+local function do_pack()  
+  if #arg == 1 then
+    usage('You must specify the output file.')
+    os.exit()
+  end
+
+  local outfile = arg[2]
+  local stream = assert(io.open(outfile, "w+"))
+  local files = {}
+  local n = 0
+  if #arg ~= 2 then
+    for i = 3,#arg do
+      n = n+1
+      file = arg[i]
+      print("adding file " .. file)
+      files[file] = file
+    end
+  else
+    print('No files given in the command line, reading files from stdin')
+    for file in io.lines() do
+      n = n+1
+      print("adding file " .. file)
+      files[file] = file
+    end
+  end
+  if n == 0 then
+    usage('You must at least specify one file to pack')
+    os.exit()
+  end
+  pack(files, stream)
+end
+
+local function do_unpack()  
+  print("unpack not implemented")
+end
+
+if #arg == 0 or ( arg[1] ~= 'pack' and arg[1] ~= 'unpack' ) then
+  usage('Please specify whether to pack or unpack')
+  os.exit()
+end
+
+if arg[1] == 'pack' then
+  do_pack()
+else 
+  do_unpack()
+end
