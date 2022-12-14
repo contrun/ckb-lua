@@ -67,13 +67,16 @@ dylibtest:
 	# Run lua code many times to ensure no memory leak.
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- -c 100 2>&1 | fgrep 'Run result: 0'
 
+lua-fs-util:
+	./lua-fs-util.sh
+
 all:
 	$(call run, test_require.lua)
 	$(call run, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, bn.lua)
 
-ci: evaluate-lua-code-in-cell-data save-and-load-file-system-data partial_loading memory_leak dylibtest
+ci: evaluate-lua-code-in-cell-data save-and-load-file-system-data partial_loading memory_leak dylibtest lua-fs-util
 	$(call run_ci, test_require.lua)
 	$(call run_ci, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
