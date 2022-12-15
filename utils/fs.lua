@@ -152,37 +152,6 @@ local function do_pack()
     pack(files, stream)
 end
 
-local function do_pack()
-    if #arg == 1 then
-        usage('You must specify the output file when packing.')
-        os.exit()
-    end
-
-    local outfile = arg[2]
-    local stream = assert(io.open(outfile, "w+"))
-    local files = {}
-    local n = 0
-    if #arg ~= 2 then
-        for i = 3, #arg do
-            n = n + 1
-            file = arg[i]
-            files[file] = file
-        end
-    else
-        print('No files given in the command line, reading files from stdin')
-        for file in io.lines() do
-            n = n + 1
-            print("adding file " .. file)
-            files[file] = file
-        end
-    end
-    if n == 0 then
-        usage('You must at least specify one file to pack')
-        os.exit()
-    end
-    pack(files, stream)
-end
-
 local function do_unpack()
     if #arg == 1 then
         usage('You must specify the input file when unpacking.')
