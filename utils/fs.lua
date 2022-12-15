@@ -59,10 +59,11 @@ end
 local function is_windows() return package.config:sub(1, 1) == "\\" end
 
 -- I found no easy, platform-agnostic way to create a directory. Below is far from satisfactory.
--- Many cases are not covered, e.g. filepath with '\' or '"' in unix.
+-- Many cases are not covered, cf
+-- https://stackoverflow.com/questions/22824905/how-good-is-using-q-in-lua-to-escape-shell-arguments
 local function create_directory(dir)
-    local command = is_windows() and 'mkdir ' .. '"' .. dir .. '"' or
-                        'mkdir -p ' .. '"' .. dir .. '"'
+    local command = is_windows() and ('mkdir %q'):format(dir) or
+                        ('mkdir -p %q'):format(dir)
     local succeeded, msg = os.execute(command)
     if not succeeded then
         print('Executing ' .. command .. 'failed: ' .. msg)
@@ -123,6 +124,26 @@ local function usage(msg)
               ' unpack input_file [directory]')
 end
 
+local function is_ideal_path(path)
+    return path:find("^/") == nil and path:find("^[.][.]") == nil and
+               path:find("^[a-zA-Z]:") == nil
+end
+
+local function normalize_relative_path(path)
+    path = path:gsub("^[.]/", "")
+    path = path:gsub("/[.]/", "/")
+    return path
+end
+
+local function must_normalize_path(path)
+    if not is_ideal_path(path) then
+        error(
+            'Either not a relative path or a relative path referring to ..: ' ..
+                path)
+    end
+    return normalize_relative_path(path)
+end
+
 local function do_pack()
     if #arg == 1 then
         usage('You must specify the output file.')
@@ -137,12 +158,12 @@ local function do_pack()
         for i = 3, #arg do
             n = n + 1
             file = arg[i]
-            files[file] = file
+            files[must_normalize_path(file)] = file
         end
     else
         for file in io.lines() do
             n = n + 1
-            files[file] = file
+            files[must_normalize_path(file)] = file
         end
     end
     if n == 0 then
