@@ -5,7 +5,7 @@
 set -xeuo pipefail
 
 root_dir="${1:-$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../../ && pwd )}"
-temp_dir="$(mktemp -p ~ -d)"
+temp_dir="$(mktemp -p ~ -d "$(basename "$0").XXXXXXXX")"
 
 cleanup() {
   rm -rf "$temp_dir"
