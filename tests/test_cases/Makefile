@@ -67,8 +67,14 @@ dylibtest:
 	# Run lua code many times to ensure no memory leak.
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- -c 100 2>&1 | fgrep 'Run result: 0'
 
+LUA-FS-UTIL-TMP-DIR ?= /tmp/lua-fs-util
 lua-fs-util:
 	./lua-fs-util.sh
+	mkdir -p $(LUA-FS-UTIL-TMP-DIR)
+	printf "$(< lua_fs_code_in_cell_data.json jq -r '.mock_info.cell_deps[].data' | sed 's/^0x//g' | fold -w 2 | xargs -n 1 printf '\\x%s')" > $(LUA-FS-UTIL-TMP-DIR)/packed.fs
+	lua ../../utils/fs.lua unpack $(LUA-FS-UTIL-TMP-DIR)/packed.fs $(LUA-FS-UTIL-TMP-DIR)/unpacked
+	find $(LUA-FS-UTIL-TMP-DIR)
+	rm -rf $(LUA-FS-UTIL-TMP-DIR)
 
 all:
 	$(call run, test_require.lua)
