@@ -480,6 +480,8 @@ exit:
 }
 
 int main(int argc, char **argv) {
+    // Always enable exit in standalone mode
+    s_lua_exit_enabled = 1;
     int status, result;
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
