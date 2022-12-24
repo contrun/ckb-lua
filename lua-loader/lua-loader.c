@@ -330,9 +330,10 @@ static int pushargs(lua_State *L) {
 /* bits of various argument indicators in 'args' */
 #define has_error 1 /* bad option */
 #define has_e 8     /* -e */
-#define has_r 4     /* -r */
+#define has_r 4     /* -r, to run scripts, with ability to load local files*/
 #define has_f 16    /* -f, to enable file system support */
 #define has_t 32    /* -t, for file system tests */
+#define has_l 64    /* -l, to run scripts, without ability to load local files*/
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -358,6 +359,9 @@ static int collectargs(char **argv, int *first) {
                 break;
             case 'r':
                 args |= has_r;
+                break;
+            case 'l':
+                args |= has_l;
                 break;
             case 'f':
                 args |= has_f;
@@ -404,8 +408,10 @@ int read_file(char *buf, int size) {
     return ret;
 }
 
-static int run_from_file(lua_State *L) {
-    enable_local_access(1);
+// Load the file given from syscall, may optionally enable access to local files
+// by setting local_access_enabled to non-zero.
+static int run_from_file(lua_State *L, int local_access_enabled) {
+    enable_local_access(local_access_enabled);
     char buf[1024 * 512];
     int count = read_file(buf, sizeof(buf));
     if (count < 0 || count == sizeof(buf)) {
@@ -469,8 +475,8 @@ static int pmain(lua_State *L) {
         ret = run_from_file_system(L);
         goto exit;
     }
-    if (args & has_r) {
-        ret = run_from_file(L);
+    if (args & has_r || args & has_l) {
+        ret = run_from_file(L, (args & has_r) == has_r);
         goto exit;
     }
     ret = load_lua_code_from_cell_data(L);
@@ -480,6 +486,8 @@ exit:
 }
 
 int main(int argc, char **argv) {
+    // Always enable exit in standalone mode
+    s_lua_exit_enabled = 1;
     int status, result;
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
