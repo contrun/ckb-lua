@@ -10,6 +10,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - uses: leafo/gh-actions-lua@v9
+      with:
+        luaVersion: "5.4"
     - name: Build
       run: |
         make all-via-docker
