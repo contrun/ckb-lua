@@ -68,6 +68,14 @@ struct syscall_function_t {
     snprintf_(_error, sizeof(_error) - 1, s, ##__VA_ARGS__); \
     ckb_exit(-1);
 
+void lua_pushsegment(lua_State *L, mol_seg_t seg) {
+    if (seg.size == 0) {
+        lua_pushnil(L);
+    } else {
+        lua_pushlstring(L, (char *)seg.ptr, seg.size);
+    }
+}
+
 int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
     switch (f->num_extra_arguments) {
         case 1:
@@ -377,6 +385,48 @@ void hex_dump(const char *desc, const void *addr, const int len, int perLine) {
     printf("  %s\n", buff);
 }
 
+int lua_ckb_unpack_script(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t script_seg;
+    script_seg.ptr = fields[0].arg.buffer.buffer;
+    script_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "code_hash");
+    mol_seg_t code_hash = MolReader_Script_get_code_hash(&script_seg);
+    lua_pushsegment(L, code_hash);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "hash_type");
+    mol_seg_t hash_type_seg = MolReader_Script_get_hash_type(&script_seg);
+    uint8_t hash_type = *((uint8_t *)hash_type_seg.ptr);
+    lua_pushinteger(L, hash_type);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "args");
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes = MolReader_Bytes_raw_bytes(&args_seg);
+    lua_pushsegment(L, args_bytes);
+    lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_dump(lua_State *L) {
     FIELD fields[] = {
         {"buffer", BUFFER},
@@ -470,14 +520,6 @@ int lua_ckb_load_script_hash(lua_State *L) {
 
 int lua_ckb_load_script(lua_State *L) { return CKB_LOAD3(L, ckb_load_script); }
 
-void lua_pushsegment(lua_State *L, mol_seg_t seg) {
-    if (seg.size == 0) {
-        lua_pushnil(L);
-    } else {
-        lua_pushlstring(L, (char *)seg.ptr, seg.size);
-    }
-}
-
 int lua_ckb_load_and_unpack_script(lua_State *L) {
     int ret;
     struct syscall_function_t f =
@@ -561,6 +603,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
+    {"unpack_script", lua_ckb_unpack_script},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 

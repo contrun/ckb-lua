@@ -1,5 +1,4 @@
 -- The results have been compared with results from https://github.com/contrun/ckb-x64-simulator/tree/dump-simulator-results
-
 local buf, error = ckb.load_witness(0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(buf == "witnessfoobar")
@@ -174,3 +173,11 @@ assert(not error)
 assert(hash_type == 2)
 assert(code_hash == "\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad")
 assert(args == "\x66\x6f\x6f\x62\x61\x72")
+
+local script, error = ckb.load_script()
+assert(not error)
+local table, error = ckb.unpack_script(script)
+assert(not error)
+assert(table['hash_type'] == 2)
+assert(table['code_hash'] == "\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad")
+assert(table['args'] == "\x66\x6f\x6f\x62\x61\x72")
