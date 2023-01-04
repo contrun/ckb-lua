@@ -482,6 +482,42 @@ fail:
     return 2;
 }
 
+int lua_ckb_unpack_outpoint(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t outpoint_seg;
+    outpoint_seg.ptr = fields[0].arg.buffer.buffer;
+    outpoint_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_OutPoint_verify(&outpoint_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "tx_hash");
+    mol_seg_t tx_hash = MolReader_OutPoint_get_tx_hash(&outpoint_seg);
+    lua_pushsegment(L, tx_hash);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "index");
+    mol_seg_t index_seg = MolReader_OutPoint_get_index(&outpoint_seg);
+    uint32_t index = *((uint32_t *)index_seg.ptr);
+    lua_pushinteger(L, index);
+    lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_dump(lua_State *L) {
     FIELD fields[] = {
         {"buffer", BUFFER},
@@ -661,6 +697,8 @@ static const luaL_Reg ckb_syscall[] = {
     {"unpack_script", lua_ckb_unpack_script},
     // TODO: add test
     {"unpack_witnessargs", lua_ckb_unpack_witnessargs},
+    // TODO: add test
+    {"unpack_outpoint", lua_ckb_unpack_outpoint},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
