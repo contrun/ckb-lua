@@ -385,16 +385,8 @@ void hex_dump(const char *desc, const void *addr, const int len, int perLine) {
     printf("  %s\n", buff);
 }
 
-int lua_ckb_unpack_script(lua_State *L) {
-    FIELD fields[] = {
-        {"buffer", BUFFER},
-    };
-    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
-
+int do_lua_ckb_unpack_script(lua_State *L, mol_seg_t script_seg) {
     int ret = 0;
-    mol_seg_t script_seg;
-    script_seg.ptr = fields[0].arg.buffer.buffer;
-    script_seg.size = fields[0].arg.buffer.length;
     if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
         ret = LUA_ERROR_ENCODING;
         goto fail;
@@ -425,6 +417,18 @@ fail:
     lua_pushnil(L);
     lua_pushinteger(L, ret);
     return 2;
+}
+
+int lua_ckb_unpack_script(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    mol_seg_t script_seg;
+    script_seg.ptr = fields[0].arg.buffer.buffer;
+    script_seg.size = fields[0].arg.buffer.length;
+    return do_lua_ckb_unpack_script(L, script_seg);
 }
 
 int lua_ckb_unpack_witnessargs(lua_State *L) {
@@ -550,6 +554,50 @@ int lua_ckb_unpack_cellinput(lua_State *L) {
         MolReader_CellInput_get_previous_output(&outpoint_seg);
     do_lua_ckb_unpack_outpoint(L, previous_output_seg);
     lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
+int lua_ckb_unpack_celloutput(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t cell_output_seg;
+    cell_output_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_output_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellOutput_verify(&cell_output_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "capacity");
+    mol_seg_t capacity_seg =
+        MolReader_CellOutput_get_capacity(&cell_output_seg);
+    uint64_t capacity = *((uint64_t *)capacity_seg.ptr);
+    lua_pushinteger(L, capacity);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "lock");
+    mol_seg_t lock_seg = MolReader_CellOutput_get_lock(&cell_output_seg);
+    do_lua_ckb_unpack_script(L, lock_seg);
+    lua_rawset(L, -3);
+
+    mol_seg_t type_seg = MolReader_CellOutput_get_type_(&cell_output_seg);
+    if (!MolReader_ScriptOpt_is_none(&type_seg)) {
+        lua_pushstring(L, "type");
+        do_lua_ckb_unpack_script(L, type_seg);
+        lua_rawset(L, -3);
+    }
 
     lua_pushnil(L);
     return 2;
@@ -742,6 +790,8 @@ static const luaL_Reg ckb_syscall[] = {
     {"unpack_outpoint", lua_ckb_unpack_outpoint},
     // TODO: add test
     {"unpack_cellinput", lua_ckb_unpack_cellinput},
+    // TODO: add test
+    {"unpack_celloutput", lua_ckb_unpack_celloutput},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
