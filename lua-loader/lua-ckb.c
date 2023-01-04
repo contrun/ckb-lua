@@ -453,9 +453,9 @@ int lua_ckb_unpack_witnessargs(lua_State *L) {
         MolReader_WitnessArgs_get_lock(&witnessargs_seg);
     if (!MolReader_BytesOpt_is_none(&witness_lock_seg)) {
         lua_pushstring(L, "lock");
-        mol_seg_t witness_lock_seg =
+        mol_seg_t witness_lock =
             MolReader_Bytes_raw_bytes(&witness_lock_seg);
-        lua_pushsegment(L, witness_lock_seg);
+        lua_pushsegment(L, witness_lock);
         lua_rawset(L, -3);
     }
 
@@ -463,9 +463,9 @@ int lua_ckb_unpack_witnessargs(lua_State *L) {
         MolReader_WitnessArgs_get_input_type(&witnessargs_seg);
     if (!MolReader_BytesOpt_is_none(&witness_input_type_seg)) {
         lua_pushstring(L, "input_type");
-        mol_seg_t witness_input_type_seg =
+        mol_seg_t witness_input_type =
             MolReader_Bytes_raw_bytes(&witness_input_type_seg);
-        lua_pushsegment(L, witness_input_type_seg);
+        lua_pushsegment(L, witness_input_type);
         lua_rawset(L, -3);
     }
 
@@ -473,9 +473,9 @@ int lua_ckb_unpack_witnessargs(lua_State *L) {
         MolReader_WitnessArgs_get_output_type(&witnessargs_seg);
     if (!MolReader_BytesOpt_is_none(&witness_output_type_seg)) {
         lua_pushstring(L, "output_type");
-        mol_seg_t witness_output_type_seg =
+        mol_seg_t witness_output_type =
             MolReader_Bytes_raw_bytes(&witness_output_type_seg);
-        lua_pushsegment(L, witness_output_type_seg);
+        lua_pushsegment(L, witness_output_type);
         lua_rawset(L, -3);
     }
 
@@ -822,7 +822,6 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
     {"unpack_script", lua_ckb_unpack_script},
-    // TODO: add test
     {"unpack_witnessargs", lua_ckb_unpack_witnessargs},
     // TODO: add test
     {"unpack_outpoint", lua_ckb_unpack_outpoint},
