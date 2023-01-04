@@ -607,6 +607,43 @@ fail:
     return 2;
 }
 
+int lua_ckb_unpack_celldep(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t cell_dep_seg;
+    cell_dep_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_dep_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellDep_verify(&cell_dep_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "dep_type");
+    mol_seg_t dep_type_seg = MolReader_CellDep_get_dep_type(&cell_dep_seg);
+    uint8_t dep_type = *((uint8_t *)dep_type_seg.ptr);
+    lua_pushinteger(L, dep_type);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "out_point");
+    mol_seg_t out_point_seg =
+        MolReader_CellDep_get_out_point(&cell_dep_seg);
+    do_lua_ckb_unpack_outpoint(L, out_point_seg);
+    lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_dump(lua_State *L) {
     FIELD fields[] = {
         {"buffer", BUFFER},
@@ -792,6 +829,8 @@ static const luaL_Reg ckb_syscall[] = {
     {"unpack_cellinput", lua_ckb_unpack_cellinput},
     // TODO: add test
     {"unpack_celloutput", lua_ckb_unpack_celloutput},
+    // TODO: add test
+    {"unpack_celldep", lua_ckb_unpack_celldep},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
