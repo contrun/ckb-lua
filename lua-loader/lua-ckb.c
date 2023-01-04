@@ -427,6 +427,61 @@ fail:
     return 2;
 }
 
+int lua_ckb_unpack_witnessargs(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t witnessargs_seg;
+    witnessargs_seg.ptr = fields[0].arg.buffer.buffer;
+    witnessargs_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_WitnessArgs_verify(&witnessargs_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    mol_seg_t witness_lock_seg =
+        MolReader_WitnessArgs_get_lock(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_lock_seg)) {
+        lua_pushstring(L, "lock");
+        mol_seg_t witness_lock_seg =
+            MolReader_Bytes_raw_bytes(&witness_lock_seg);
+        lua_pushsegment(L, witness_lock_seg);
+        lua_rawset(L, -3);
+    }
+
+    mol_seg_t witness_input_type_seg =
+        MolReader_WitnessArgs_get_input_type(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_input_type_seg)) {
+        lua_pushstring(L, "input_type");
+        mol_seg_t witness_input_type_seg =
+            MolReader_Bytes_raw_bytes(&witness_input_type_seg);
+        lua_pushsegment(L, witness_input_type_seg);
+        lua_rawset(L, -3);
+    }
+
+    mol_seg_t witness_output_type_seg =
+        MolReader_WitnessArgs_get_output_type(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_output_type_seg)) {
+        lua_pushstring(L, "output_type");
+        mol_seg_t witness_output_type_seg =
+            MolReader_Bytes_raw_bytes(&witness_output_type_seg);
+        lua_pushsegment(L, witness_output_type_seg);
+        lua_rawset(L, -3);
+    }
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_dump(lua_State *L) {
     FIELD fields[] = {
         {"buffer", BUFFER},
@@ -604,6 +659,8 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
     {"unpack_script", lua_ckb_unpack_script},
+    // TODO: add test
+    {"unpack_witnessargs", lua_ckb_unpack_witnessargs},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
