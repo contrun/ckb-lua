@@ -823,7 +823,6 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_script", lua_ckb_load_script},
     {"unpack_script", lua_ckb_unpack_script},
     {"unpack_witnessargs", lua_ckb_unpack_witnessargs},
-    // TODO: add test
     {"unpack_outpoint", lua_ckb_unpack_outpoint},
     // TODO: add test
     {"unpack_cellinput", lua_ckb_unpack_cellinput},
