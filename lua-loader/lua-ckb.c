@@ -386,10 +386,8 @@ void hex_dump(const char *desc, const void *addr, const int len, int perLine) {
 }
 
 int do_lua_ckb_unpack_script(lua_State *L, mol_seg_t script_seg) {
-    int ret = 0;
     if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
-        ret = LUA_ERROR_ENCODING;
-        goto fail;
+        return LUA_ERROR_ENCODING;
     }
 
     lua_newtable(L);
@@ -411,12 +409,7 @@ int do_lua_ckb_unpack_script(lua_State *L, mol_seg_t script_seg) {
     lua_pushsegment(L, args_bytes);
     lua_rawset(L, -3);
 
-    lua_pushnil(L);
-    return 2;
-fail:
-    lua_pushnil(L);
-    lua_pushinteger(L, ret);
-    return 2;
+    return 0;
 }
 
 int lua_ckb_unpack_script(lua_State *L) {
@@ -428,7 +421,15 @@ int lua_ckb_unpack_script(lua_State *L) {
     mol_seg_t script_seg;
     script_seg.ptr = fields[0].arg.buffer.buffer;
     script_seg.size = fields[0].arg.buffer.length;
-    return do_lua_ckb_unpack_script(L, script_seg);
+    int ret = do_lua_ckb_unpack_script(L, script_seg);
+    if (ret == 0) {
+        lua_pushnil(L);
+        return 2;
+    } else {
+        lua_pushnil(L);
+        lua_pushinteger(L, ret);
+        return 2;
+    }
 }
 
 int lua_ckb_unpack_witnessargs(lua_State *L) {
@@ -487,10 +488,8 @@ fail:
 }
 
 int do_lua_ckb_unpack_outpoint(lua_State *L, mol_seg_t outpoint_seg) {
-    int ret = 0;
     if (MolReader_OutPoint_verify(&outpoint_seg, false) != MOL_OK) {
-        ret = LUA_ERROR_ENCODING;
-        goto fail;
+        return LUA_ERROR_ENCODING;
     }
 
     lua_newtable(L);
@@ -506,12 +505,7 @@ int do_lua_ckb_unpack_outpoint(lua_State *L, mol_seg_t outpoint_seg) {
     lua_pushinteger(L, index);
     lua_rawset(L, -3);
 
-    lua_pushnil(L);
-    return 2;
-fail:
-    lua_pushnil(L);
-    lua_pushinteger(L, ret);
-    return 2;
+    return 0;
 }
 
 int lua_ckb_unpack_outpoint(lua_State *L) {
@@ -523,7 +517,15 @@ int lua_ckb_unpack_outpoint(lua_State *L) {
     mol_seg_t outpoint_seg;
     outpoint_seg.ptr = fields[0].arg.buffer.buffer;
     outpoint_seg.size = fields[0].arg.buffer.length;
-    return do_lua_ckb_unpack_outpoint(L, outpoint_seg);
+    int ret = do_lua_ckb_unpack_outpoint(L, outpoint_seg);
+    if (ret == 0) {
+        lua_pushnil(L);
+        return 2;
+    } else {
+        lua_pushnil(L);
+        lua_pushinteger(L, ret);
+        return 2;
+    }
 }
 
 int lua_ckb_unpack_cellinput(lua_State *L) {
@@ -533,10 +535,10 @@ int lua_ckb_unpack_cellinput(lua_State *L) {
     GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
 
     int ret = 0;
-    mol_seg_t outpoint_seg;
-    outpoint_seg.ptr = fields[0].arg.buffer.buffer;
-    outpoint_seg.size = fields[0].arg.buffer.length;
-    if (MolReader_CellInput_verify(&outpoint_seg, false) != MOL_OK) {
+    mol_seg_t cell_input_seg;
+    cell_input_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_input_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellInput_verify(&cell_input_seg, false) != MOL_OK) {
         ret = LUA_ERROR_ENCODING;
         goto fail;
     }
@@ -544,14 +546,14 @@ int lua_ckb_unpack_cellinput(lua_State *L) {
     lua_newtable(L);
 
     lua_pushstring(L, "since");
-    mol_seg_t since_seg = MolReader_CellInput_get_since(&outpoint_seg);
+    mol_seg_t since_seg = MolReader_CellInput_get_since(&cell_input_seg);
     uint64_t since = *((uint64_t *)since_seg.ptr);
     lua_pushinteger(L, since);
     lua_rawset(L, -3);
 
     lua_pushstring(L, "previous_output");
     mol_seg_t previous_output_seg =
-        MolReader_CellInput_get_previous_output(&outpoint_seg);
+        MolReader_CellInput_get_previous_output(&cell_input_seg);
     do_lua_ckb_unpack_outpoint(L, previous_output_seg);
     lua_rawset(L, -3);
 
@@ -631,8 +633,7 @@ int lua_ckb_unpack_celldep(lua_State *L) {
     lua_rawset(L, -3);
 
     lua_pushstring(L, "out_point");
-    mol_seg_t out_point_seg =
-        MolReader_CellDep_get_out_point(&cell_dep_seg);
+    mol_seg_t out_point_seg = MolReader_CellDep_get_out_point(&cell_dep_seg);
     do_lua_ckb_unpack_outpoint(L, out_point_seg);
     lua_rawset(L, -3);
 
