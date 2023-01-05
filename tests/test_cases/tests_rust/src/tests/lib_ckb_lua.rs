@@ -186,7 +186,7 @@ fn build_resolved_tx(data_loader: &DummyDataLoader, tx: &TransactionView) -> Res
 }
 
 #[test]
-fn run_dylib_test() {
+fn run_dylib_tests() {
     let mut data_loader = DummyDataLoader::new();
     let tx = gen_tx(&mut data_loader);
     let resolved_tx = build_resolved_tx(&data_loader, &tx);

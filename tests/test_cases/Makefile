@@ -53,7 +53,7 @@ partial_loading: partial_loading.json
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file $^ --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file test_partial_loading.lua --bin ../../build/lua-loader.debug -- -r  2>&1 | fgrep 'Run result: 0'
 
 dylibtest:
-	cd dylib; cargo test -- --nocapture 2>&1 | grep -v -F 'Code after exit_script should be unreachable' | grep -q -F 'hello world'
+	cd tests_rust; cargo test run_dylib_tests -- --nocapture 2>&1 | grep -v -F 'Code after exit_script should be unreachable' | grep -q -F 'hello world'
 
 lua-fs-util:
 	./lua-fs-pack-and-unpack.sh
