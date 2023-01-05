@@ -258,22 +258,8 @@ int main(int argc, char* argv[]) {
     void* handle;
     must_get_dylib_handle(&handle);
 
-    int n = 0;
-    size_t optind;
-    for (optind = 0; optind < argc && argv[optind][0] == '-'; optind++) {
-        switch (argv[optind][1]) {
-            case 'c': {
-                n = _atoi((const char**)&argv[optind + 1]);
-                optind = optind + 1;
-                break;
-            }
-            default:
-                printf("Usage: [-c number_of_times_to_run]\n");
-                ckb_exit(-1);
-        }
-    }
-    argv += optind;
-
+    // Ensure no memory leak.
+    int n = 100;
     run_lua_test_code(handle, n);
 
     test_invalid_lua_code(handle);

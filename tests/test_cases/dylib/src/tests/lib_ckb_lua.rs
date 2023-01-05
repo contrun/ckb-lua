@@ -21,12 +21,11 @@ use rand::{Rng, SeedableRng};
 
 fn debug_printer(script: &Byte32, msg: &str) {
     let slice = script.as_slice();
-    let _str = format!(
+    let str = format!(
         "Script({:x}{:x}{:x}{:x}{:x})",
         slice[0], slice[1], slice[2], slice[3], slice[4]
     );
-    // println!("{:?}: {}", str, msg);
-    print!("{msg}");
+    println!("{:?}: {}", str, msg);
 }
 
 fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
