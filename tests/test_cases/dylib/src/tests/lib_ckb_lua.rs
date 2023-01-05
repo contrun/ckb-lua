@@ -31,14 +31,7 @@ fn debug_printer(script: &Byte32, msg: &str) {
 
 fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
     let mut rng = <StdRng as SeedableRng>::from_seed([42u8; 32]);
-    gen_tx_with_grouped_args(dummy, vec![(Bytes::new(), 1)], &mut rng)
-}
 
-fn gen_tx_with_grouped_args<R: Rng>(
-    dummy: &mut DummyDataLoader,
-    grouped_args: Vec<(Bytes, usize)>,
-    rng: &mut R,
-) -> TransactionView {
     // setup lib_ckb_lua dep
     let lib_ckb_lua_out_point = {
         let contract_tx_hash = {
@@ -105,45 +98,39 @@ fn gen_tx_with_grouped_args<R: Rng>(
         )
         .output_data(Bytes::new().pack());
 
-    for (_args, inputs_size) in grouped_args {
-        // setup dummy input unlock script
-        for _ in 0..inputs_size {
-            let previous_tx_hash = {
-                let mut buf = [0u8; 32];
-                rng.fill(&mut buf);
-                buf.pack()
-            };
-            let out_point = OutPoint::new(previous_tx_hash, 0);
+    let previous_tx_hash = {
+        let mut buf = [0u8; 32];
+        rng.fill(&mut buf);
+        buf.pack()
+    };
+    let out_point = OutPoint::new(previous_tx_hash, 0);
 
-            let mut buf =
-                BytesMut::with_capacity(2 + lib_ckb_lua_cell_data_hash.as_slice().len() + 1);
-            buf.extend_from_slice(&[0x00u8; 2]);
-            buf.extend_from_slice(lib_ckb_lua_cell_data_hash.as_slice());
-            buf.put_u8(ScriptHashType::Data1.into());
-            let args = buf.freeze();
+    let mut buf = BytesMut::with_capacity(2 + lib_ckb_lua_cell_data_hash.as_slice().len() + 1);
+    buf.extend_from_slice(&[0x00u8; 2]);
+    buf.extend_from_slice(lib_ckb_lua_cell_data_hash.as_slice());
+    buf.put_u8(ScriptHashType::Data1.into());
+    let args = buf.freeze();
 
-            let script = Script::new_builder()
-                .args(args.pack())
-                .code_hash(dylib_test_cell_data_hash.clone())
-                .hash_type(ScriptHashType::Data1.into())
-                .build();
-            let output_cell = CellOutput::new_builder()
-                .capacity(dummy_capacity.pack())
-                .type_(Some(script).pack())
-                .build();
-            dummy
-                .cells
-                .insert(out_point.clone(), (output_cell.clone(), Bytes::new()));
-            let mut random_extra_witness = [0u8; 32];
-            rng.fill(&mut random_extra_witness);
-            let witness_args = WitnessArgsBuilder::default()
-                .output_type(Some(Bytes::from(random_extra_witness.to_vec())).pack())
-                .build();
-            tx_builder = tx_builder
-                .output(output_cell)
-                .witness(witness_args.as_bytes().pack());
-        }
-    }
+    let script = Script::new_builder()
+        .args(args.pack())
+        .code_hash(dylib_test_cell_data_hash)
+        .hash_type(ScriptHashType::Data1.into())
+        .build();
+    let output_cell = CellOutput::new_builder()
+        .capacity(dummy_capacity.pack())
+        .type_(Some(script).pack())
+        .build();
+    dummy
+        .cells
+        .insert(out_point, (output_cell.clone(), Bytes::new()));
+    let mut random_extra_witness = [0u8; 32];
+    rng.fill(&mut random_extra_witness);
+    let witness_args = WitnessArgsBuilder::default()
+        .output_type(Some(Bytes::from(random_extra_witness.to_vec())).pack())
+        .build();
+    tx_builder = tx_builder
+        .output(output_cell)
+        .witness(witness_args.as_bytes().pack());
 
     tx_builder.build()
 }
@@ -200,7 +187,7 @@ fn build_resolved_tx(data_loader: &DummyDataLoader, tx: &TransactionView) -> Res
 }
 
 #[test]
-fn test_sighash_all_unlock() {
+fn run_dylib_test() {
     let mut data_loader = DummyDataLoader::new();
     let tx = gen_tx(&mut data_loader);
     let resolved_tx = build_resolved_tx(&data_loader, &tx);
