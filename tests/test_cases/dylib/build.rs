@@ -32,7 +32,7 @@ fn main() {
     let mut errors = Vec::new();
 
     for (name, expected_hash) in BINARIES {
-        let path = format!("{}{}", PATH_PREFIX, name);
+        let path = format!("{PATH_PREFIX}{name}");
 
         let mut buf = [0u8; BUF_SIZE];
         bundled
@@ -62,8 +62,8 @@ fn main() {
 
         writeln!(
             &mut out_file,
-            "pub const {}: [u8; 32] = {:?};",
-            format!("CODE_HASH_{}", name.to_uppercase()),
+            "pub const CODE_HASH_{}: [u8; 32] = {:?};",
+            name.to_uppercase(),
             hash
         )
         .expect("write to code_hashes.rs");
@@ -71,13 +71,10 @@ fn main() {
 
     if !errors.is_empty() {
         for (name, expected, actual) in errors.into_iter() {
-            eprintln!("{}: expect {}, actual {}", name, expected, actual);
+            eprintln!("{name}: expect {expected}, actual {actual}");
         }
-        match std::env::var("PROFILE").as_deref() {
-            Ok("release") => {
-                panic!("not all hashes are right")
-            }
-            _ => (),
+        if let Ok("release") = std::env::var("PROFILE").as_deref() {
+            panic!("not all hashes are right")
         }
     }
 
