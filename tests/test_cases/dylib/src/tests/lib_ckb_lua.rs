@@ -2,6 +2,7 @@ use super::{
     blake160, sign_tx, sign_tx_by_input_group, DummyDataLoader, DYLIB_TEST_BIN, LIB_CKB_LUA_BIN,
     MAX_CYCLES,
 };
+use bytes::BufMut;
 use ckb_chain_spec::consensus::{Consensus, ConsensusBuilder};
 use p256::ecdsa::{SigningKey, VerifyingKey};
 
@@ -9,14 +10,13 @@ use ckb_script::{TransactionScriptsVerifier, TxVerifyEnv};
 use ckb_types::core::hardfork::HardForkSwitch;
 use ckb_types::{
     bytes::Bytes,
+    bytes::BytesMut,
     core::{
         cell::{CellMetaBuilder, ResolvedTransaction},
         Capacity, DepType, EpochNumberWithFraction, HeaderView, ScriptHashType, TransactionBuilder,
         TransactionView,
     },
-    packed::{
-        Byte32, CellDep, CellInput, CellOutput, OutPoint, Script, WitnessArgs, WitnessArgsBuilder,
-    },
+    packed::{Byte32, CellDep, CellOutput, OutPoint, Script, WitnessArgs, WitnessArgsBuilder},
     prelude::*,
 };
 use hex_literal::hex;
@@ -50,8 +50,8 @@ fn gen_tx_with_grouped_args<R: Rng>(
     grouped_args: Vec<(Bytes, usize)>,
     rng: &mut R,
 ) -> TransactionView {
-    // setup sighash_all dep
-    let sighash_all_out_point = {
+    // setup lib_ckb_lua dep
+    let lib_ckb_lua_out_point = {
         let contract_tx_hash = {
             let mut buf = [0u8; 32];
             rng.fill(&mut buf);
@@ -60,27 +60,55 @@ fn gen_tx_with_grouped_args<R: Rng>(
         OutPoint::new(contract_tx_hash, 0)
     };
     // dep contract code
-    let sighash_all_cell = CellOutput::new_builder()
+    let lib_ckb_lua_cell = CellOutput::new_builder()
         .capacity(
             Capacity::bytes(LIB_CKB_LUA_BIN.len())
                 .expect("script capacity")
                 .pack(),
         )
         .build();
-    let sighash_all_cell_data_hash = CellOutput::calc_data_hash(&LIB_CKB_LUA_BIN);
+    let lib_ckb_lua_cell_data_hash = CellOutput::calc_data_hash(&LIB_CKB_LUA_BIN);
     dummy.cells.insert(
-        sighash_all_out_point.clone(),
-        (sighash_all_cell, LIB_CKB_LUA_BIN.clone()),
+        lib_ckb_lua_out_point.clone(),
+        (lib_ckb_lua_cell, LIB_CKB_LUA_BIN.clone()),
     );
+
+    // setup dylib_test dep
+    let dylib_test_out_point = {
+        let contract_tx_hash = {
+            let mut buf = [0u8; 32];
+            rng.fill(&mut buf);
+            buf.pack()
+        };
+        OutPoint::new(contract_tx_hash, 0)
+    };
+    // dep contract code
+    let dylib_test_cell = CellOutput::new_builder()
+        .capacity(
+            Capacity::bytes(DYLIB_TEST_BIN.len())
+                .expect("script capacity")
+                .pack(),
+        )
+        .build();
+    let dylib_test_cell_data_hash = CellOutput::calc_data_hash(&DYLIB_TEST_BIN);
+    dummy.cells.insert(
+        dylib_test_out_point.clone(),
+        (dylib_test_cell, DYLIB_TEST_BIN.clone()),
+    );
+
     // setup default tx builder
     let dummy_capacity = Capacity::shannons(42);
     let mut tx_builder = TransactionBuilder::default()
-        .cell_dep(
+        .cell_deps(vec![
             CellDep::new_builder()
-                .out_point(sighash_all_out_point)
+                .out_point(dylib_test_out_point)
                 .dep_type(DepType::Code.into())
                 .build(),
-        )
+            CellDep::new_builder()
+                .out_point(lib_ckb_lua_out_point)
+                .dep_type(DepType::Code.into())
+                .build(),
+        ])
         .output(
             CellOutput::new_builder()
                 .capacity(dummy_capacity.pack())
@@ -88,7 +116,7 @@ fn gen_tx_with_grouped_args<R: Rng>(
         )
         .output_data(Bytes::new().pack());
 
-    for (args, inputs_size) in grouped_args {
+    for (_args, inputs_size) in grouped_args {
         // setup dummy input unlock script
         for _ in 0..inputs_size {
             let previous_tx_hash = {
@@ -96,27 +124,34 @@ fn gen_tx_with_grouped_args<R: Rng>(
                 rng.fill(&mut buf);
                 buf.pack()
             };
-            let previous_out_point = OutPoint::new(previous_tx_hash, 0);
+            let out_point = OutPoint::new(previous_tx_hash, 0);
+
+            let mut buf =
+                BytesMut::with_capacity(2 + lib_ckb_lua_cell_data_hash.as_slice().len() + 1);
+            buf.extend_from_slice(&[0x00u8; 2]);
+            buf.extend_from_slice(lib_ckb_lua_cell_data_hash.as_slice());
+            buf.put_u8(ScriptHashType::Data1.into());
+            let args = buf.freeze();
+
             let script = Script::new_builder()
                 .args(args.pack())
-                .code_hash(sighash_all_cell_data_hash.clone())
-                .hash_type(ScriptHashType::Data.into())
+                .code_hash(dylib_test_cell_data_hash.clone())
+                .hash_type(ScriptHashType::Data1.into())
                 .build();
-            let previous_output_cell = CellOutput::new_builder()
+            let output_cell = CellOutput::new_builder()
                 .capacity(dummy_capacity.pack())
-                .lock(script)
+                .type_(Some(script).pack())
                 .build();
-            dummy.cells.insert(
-                previous_out_point.clone(),
-                (previous_output_cell.clone(), Bytes::new()),
-            );
+            dummy
+                .cells
+                .insert(out_point.clone(), (output_cell.clone(), Bytes::new()));
             let mut random_extra_witness = [0u8; 32];
             rng.fill(&mut random_extra_witness);
             let witness_args = WitnessArgsBuilder::default()
                 .output_type(Some(Bytes::from(random_extra_witness.to_vec())).pack())
                 .build();
             tx_builder = tx_builder
-                .input(CellInput::new(previous_out_point, 0))
+                .output(output_cell)
                 .witness(witness_args.as_bytes().pack());
         }
     }
