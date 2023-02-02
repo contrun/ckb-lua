@@ -389,6 +389,72 @@ return values: buf (the buffer that contains the header field), err (may be nil 
 
 see also: [`ckb_load_header_by_field` syscall](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#load-header-by-field)
 
+#### `ckb.unpack_script`
+description: unpack the buffer that contains the molecule structure `Script`
+
+calling example: [`ckb.unpack_script(buf)`](https://github.com/contrun/ckb-lua/blob/4c05beeaa679acfd0b5e8d24e6c012374f08f11b/tests/test_cases/test_ckbsyscalls.lua#L191C56-L195)
+
+arguments: buf (the buffer that contains the molecule structure `Script`)
+
+return values: table (a table contains keys `code_hash`, `hash_type` and `args`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `Script`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L30-L34)
+
+#### `ckb.unpack_witnessargs
+description: unpack the buffer that contains the molecule structure `WitnessArgs`
+
+calling example: `ckb.unpack_witnessargs(buf)`
+
+arguments: buf (the buffer that contains the molecule structure `WitnessArgs`)
+
+return values: table (a table contains keys `lock`, `input_type` and `output_type`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `WitnessArgs`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L114C7-L118)
+
+#### `ckb.unpack_outpoint
+description: unpack the buffer that contains the molecule structure `OutPoint`
+
+calling example: `ckb.unpack_outpoint(buf)`
+
+arguments: buf (the buffer that contains the molecule structure `OutPoint`)
+
+return values: table (a table contains keys `tx_hash` and `index`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `OutPoint`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L36-L39)
+
+#### `ckb.unpack_cellinput
+description: unpack the buffer that contains the molecule structure `CellInput`
+
+calling example: `ckb.unpack_cellinput(buf)`
+
+arguments: buf (the buffer that contains the molecule structure `CellInput`)
+
+return values: table (a table contains keys `since` and `previous_output`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `CellInput`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L41-L44)
+
+#### `ckb.unpack_celloutput
+description: unpack the buffer that contains the molecule structure `CellOutput`
+
+calling example: `ckb.unpack_celloutput(buf)`
+
+arguments: buf (the buffer that contains the molecule structure `CellOutput`)
+
+return values: table (a table contains keys `capacity`, `lock` and `type`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `CellOutput`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L46-L50)
+
+#### `ckb.unpack_celldep
+description: unpack the buffer that contains the molecule structure `CellDep`
+
+calling example: `ckb.unpack_celldep(buf)`
+
+arguments: buf (the buffer that contains the molecule structure `CellDep`)
+
+return values: table (a table contains keys `out_point` and `dep_type`), err (may be nil object to represent possible error)
+
+see also: [The molecule definition of `CellDep`](https://github.com/nervosnetwork/ckb/blob/2e965706d15cf32b06ad96a2e45f2b09a5eddbb7/util/types/schemas/blockchain.mol#L52-L55)
+
 ## Exported constants
 
 While most constants here are directly taken from [ckb_consts.h](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/ckb_consts.h), we also defined some are ckb-lua specific constants like `ckb.LUA_ERROR_INTERNAL`.

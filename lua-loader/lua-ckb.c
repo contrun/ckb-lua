@@ -68,6 +68,14 @@ struct syscall_function_t {
     snprintf_(_error, sizeof(_error) - 1, s, ##__VA_ARGS__); \
     ckb_exit(-1);
 
+void lua_pushsegment(lua_State *L, mol_seg_t seg) {
+    if (seg.size == 0) {
+        lua_pushnil(L);
+    } else {
+        lua_pushlstring(L, (char *)seg.ptr, seg.size);
+    }
+}
+
 int call_syscall(struct syscall_function_t *f, uint8_t *buf) {
     switch (f->num_extra_arguments) {
         case 1:
@@ -377,6 +385,266 @@ void hex_dump(const char *desc, const void *addr, const int len, int perLine) {
     printf("  %s\n", buff);
 }
 
+int do_lua_ckb_unpack_script(lua_State *L, mol_seg_t script_seg) {
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        return LUA_ERROR_ENCODING;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "code_hash");
+    mol_seg_t code_hash = MolReader_Script_get_code_hash(&script_seg);
+    lua_pushsegment(L, code_hash);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "hash_type");
+    mol_seg_t hash_type_seg = MolReader_Script_get_hash_type(&script_seg);
+    uint8_t hash_type = *((uint8_t *)hash_type_seg.ptr);
+    lua_pushinteger(L, hash_type);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "args");
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes = MolReader_Bytes_raw_bytes(&args_seg);
+    lua_pushsegment(L, args_bytes);
+    lua_rawset(L, -3);
+
+    return 0;
+}
+
+int lua_ckb_unpack_script(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    mol_seg_t script_seg;
+    script_seg.ptr = fields[0].arg.buffer.buffer;
+    script_seg.size = fields[0].arg.buffer.length;
+    int ret = do_lua_ckb_unpack_script(L, script_seg);
+    if (ret == 0) {
+        lua_pushnil(L);
+        return 2;
+    } else {
+        lua_pushnil(L);
+        lua_pushinteger(L, ret);
+        return 2;
+    }
+}
+
+int lua_ckb_unpack_witnessargs(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t witnessargs_seg;
+    witnessargs_seg.ptr = fields[0].arg.buffer.buffer;
+    witnessargs_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_WitnessArgs_verify(&witnessargs_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    mol_seg_t witness_lock_seg =
+        MolReader_WitnessArgs_get_lock(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_lock_seg)) {
+        lua_pushstring(L, "lock");
+        mol_seg_t witness_lock =
+            MolReader_Bytes_raw_bytes(&witness_lock_seg);
+        lua_pushsegment(L, witness_lock);
+        lua_rawset(L, -3);
+    }
+
+    mol_seg_t witness_input_type_seg =
+        MolReader_WitnessArgs_get_input_type(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_input_type_seg)) {
+        lua_pushstring(L, "input_type");
+        mol_seg_t witness_input_type =
+            MolReader_Bytes_raw_bytes(&witness_input_type_seg);
+        lua_pushsegment(L, witness_input_type);
+        lua_rawset(L, -3);
+    }
+
+    mol_seg_t witness_output_type_seg =
+        MolReader_WitnessArgs_get_output_type(&witnessargs_seg);
+    if (!MolReader_BytesOpt_is_none(&witness_output_type_seg)) {
+        lua_pushstring(L, "output_type");
+        mol_seg_t witness_output_type =
+            MolReader_Bytes_raw_bytes(&witness_output_type_seg);
+        lua_pushsegment(L, witness_output_type);
+        lua_rawset(L, -3);
+    }
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
+int do_lua_ckb_unpack_outpoint(lua_State *L, mol_seg_t outpoint_seg) {
+    if (MolReader_OutPoint_verify(&outpoint_seg, false) != MOL_OK) {
+        return LUA_ERROR_ENCODING;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "tx_hash");
+    mol_seg_t tx_hash = MolReader_OutPoint_get_tx_hash(&outpoint_seg);
+    lua_pushsegment(L, tx_hash);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "index");
+    mol_seg_t index_seg = MolReader_OutPoint_get_index(&outpoint_seg);
+    uint32_t index = *((uint32_t *)index_seg.ptr);
+    lua_pushinteger(L, index);
+    lua_rawset(L, -3);
+
+    return 0;
+}
+
+int lua_ckb_unpack_outpoint(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    mol_seg_t outpoint_seg;
+    outpoint_seg.ptr = fields[0].arg.buffer.buffer;
+    outpoint_seg.size = fields[0].arg.buffer.length;
+    int ret = do_lua_ckb_unpack_outpoint(L, outpoint_seg);
+    if (ret == 0) {
+        lua_pushnil(L);
+        return 2;
+    } else {
+        lua_pushnil(L);
+        lua_pushinteger(L, ret);
+        return 2;
+    }
+}
+
+int lua_ckb_unpack_cellinput(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t cell_input_seg;
+    cell_input_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_input_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellInput_verify(&cell_input_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "since");
+    mol_seg_t since_seg = MolReader_CellInput_get_since(&cell_input_seg);
+    uint64_t since = *((uint64_t *)since_seg.ptr);
+    lua_pushinteger(L, since);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "previous_output");
+    mol_seg_t previous_output_seg =
+        MolReader_CellInput_get_previous_output(&cell_input_seg);
+    do_lua_ckb_unpack_outpoint(L, previous_output_seg);
+    lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
+int lua_ckb_unpack_celloutput(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t cell_output_seg;
+    cell_output_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_output_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellOutput_verify(&cell_output_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "capacity");
+    mol_seg_t capacity_seg =
+        MolReader_CellOutput_get_capacity(&cell_output_seg);
+    uint64_t capacity = *((uint64_t *)capacity_seg.ptr);
+    lua_pushinteger(L, capacity);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "lock");
+    mol_seg_t lock_seg = MolReader_CellOutput_get_lock(&cell_output_seg);
+    do_lua_ckb_unpack_script(L, lock_seg);
+    lua_rawset(L, -3);
+
+    mol_seg_t type_seg = MolReader_CellOutput_get_type_(&cell_output_seg);
+    if (!MolReader_ScriptOpt_is_none(&type_seg)) {
+        lua_pushstring(L, "type");
+        do_lua_ckb_unpack_script(L, type_seg);
+        lua_rawset(L, -3);
+    }
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
+int lua_ckb_unpack_celldep(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+
+    int ret = 0;
+    mol_seg_t cell_dep_seg;
+    cell_dep_seg.ptr = fields[0].arg.buffer.buffer;
+    cell_dep_seg.size = fields[0].arg.buffer.length;
+    if (MolReader_CellDep_verify(&cell_dep_seg, false) != MOL_OK) {
+        ret = LUA_ERROR_ENCODING;
+        goto fail;
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L, "dep_type");
+    mol_seg_t dep_type_seg = MolReader_CellDep_get_dep_type(&cell_dep_seg);
+    uint8_t dep_type = *((uint8_t *)dep_type_seg.ptr);
+    lua_pushinteger(L, dep_type);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "out_point");
+    mol_seg_t out_point_seg = MolReader_CellDep_get_out_point(&cell_dep_seg);
+    do_lua_ckb_unpack_outpoint(L, out_point_seg);
+    lua_rawset(L, -3);
+
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_dump(lua_State *L) {
     FIELD fields[] = {
         {"buffer", BUFFER},
@@ -470,14 +738,6 @@ int lua_ckb_load_script_hash(lua_State *L) {
 
 int lua_ckb_load_script(lua_State *L) { return CKB_LOAD3(L, ckb_load_script); }
 
-void lua_pushsegment(lua_State *L, mol_seg_t seg) {
-    if (seg.size == 0) {
-        lua_pushnil(L);
-    } else {
-        lua_pushlstring(L, (char *)seg.ptr, seg.size);
-    }
-}
-
 int lua_ckb_load_and_unpack_script(lua_State *L) {
     int ret;
     struct syscall_function_t f =
@@ -561,6 +821,12 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
+    {"unpack_script", lua_ckb_unpack_script},
+    {"unpack_witnessargs", lua_ckb_unpack_witnessargs},
+    {"unpack_outpoint", lua_ckb_unpack_outpoint},
+    {"unpack_cellinput", lua_ckb_unpack_cellinput},
+    {"unpack_celloutput", lua_ckb_unpack_celloutput},
+    {"unpack_celldep", lua_ckb_unpack_celldep},
     {"load_and_unpack_script", lua_ckb_load_and_unpack_script},
     {"load_transaction", lua_ckb_load_transaction},
 
