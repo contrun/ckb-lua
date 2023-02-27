@@ -334,13 +334,7 @@ static int collectargs(char **argv, int *first) {
             return args;       /* stop handling options */
         switch (argv[i][1]) {  /* else check option */
             case 'e':
-                args |= has_e;            /* FALLTHROUGH */
-                if (argv[i][2] == '\0') { /* no concatenated argument? */
-                    i++;                  /* try next 'argv' */
-                    if (argv[i] == NULL || argv[i][0] == '-')
-                        return has_error; /* no next argument or it is another
-                                             option */
-                }
+                args |= has_e;
                 break;
             case 'r':
                 args |= has_r;
@@ -367,25 +361,8 @@ static int collectargs(char **argv, int *first) {
 ** 'W', which also affects the state.
 ** Returns 0 if some code raises an error.
 */
-static int runargs(lua_State *L, char **argv, int n) {
-    int i;
-    for (i = 1; i < n; i++) {
-        int option = argv[i][1];
-        lua_assert(argv[i][0] == '-'); /* already checked */
-        switch (option) {
-            case 'e': {
-                int status;
-                char *extra = argv[i] + 2; /* both options need an argument */
-                if (*extra == '\0') extra = argv[++i];
-                lua_assert(extra != NULL);
-                status = (option == 'e') ? dostring(L, extra, "=(command line)")
-                                         : dolibrary(L, extra);
-                if (status != LUA_OK) return 0;
-                break;
-            }
-        }
-    }
-    return 1;
+static int run_from_args(lua_State *L, char **argv, int n) {
+    return dostring(L, argv[n], "=(command line)");
 }
 
 int read_file(char *buf, int size) {
@@ -449,11 +426,13 @@ static int pmain(lua_State *L) {
     luaopen_ckb(L);
     createargtable(L, argv, argc, script); /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
-    if (!runargs(L, argv, script))         /* execute arguments -e and -l */
-        return 0;                          /* something failed */
     int ret;
     if (args & has_f) {
         enable_fs_access(1);
+    }
+    if (args & has_e) {
+        ret = run_from_args(L, argv, script);
+        goto exit;
     }
     if (args & has_t) {
         enable_fs_access(1);
