@@ -200,7 +200,8 @@ int load_lua_code(lua_State *L, char *buf, size_t buflen) {
 
     int ret = ckb_load_fs(buf, buflen);
     if (ret) {
-        return -ret;
+        printf("Error while loading file system: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
 
     static const char *FILENAME = "main.lua";
@@ -213,7 +214,8 @@ int load_lua_code_from_source(lua_State *L, uint16_t lua_loader_args,
     size_t buflen = 0;
     int ret = ckb_load_cell_data(NULL, &buflen, 0, index, source);
     if (ret) {
-        return -ret;
+        printf("Error while loading cell data: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     buf = malloc(buflen);
     if (buf == NULL) {
@@ -221,7 +223,8 @@ int load_lua_code_from_source(lua_State *L, uint16_t lua_loader_args,
     }
     ret = ckb_load_cell_data(buf, &buflen, 0, index, source);
     if (ret) {
-        return -ret;
+        printf("Error while loading cell data: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     return load_lua_code(L, buf, buflen);
 }
@@ -231,7 +234,8 @@ int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
     size_t index = 0;
     int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
     if (ret) {
-        return -ret;
+        printf("Error while looking for dep: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     return load_lua_code_from_source(L, lua_loader_args, CKB_SOURCE_CELL_DEP,
                                      index);
@@ -243,7 +247,8 @@ int load_lua_code_from_cell_data(lua_State *L) {
     uint64_t len = SCRIPT_SIZE;
     int ret = ckb_load_script(script, &len, 0);
     if (ret) {
-        return -ret;
+        printf("Error while loading script: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     if (len > SCRIPT_SIZE) {
         return -LUA_ERROR_SCRIPT_TOO_LONG;
@@ -377,8 +382,12 @@ static int run_from_file(lua_State *L, int local_access_enabled) {
     char buf[1024 * 512];
     int count = read_file(buf, sizeof(buf));
     if (count < 0 || count == sizeof(buf)) {
-        printf("error reading from file");
-        return 0;
+        if (count == sizeof(buf)) {
+            printf("Error while reading from file: file too large\n");
+        } else {
+            printf("Error while reading from file: %d\n", count);
+        }
+        return -LUA_ERROR_INVALID_STATE;
     }
     buf[count] = 0;
     int status = dochunk(L, luaL_loadbuffer(L, buf, count, "=(read file)"));
