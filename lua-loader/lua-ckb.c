@@ -813,6 +813,48 @@ int lua_ckb_load_header_by_field(lua_State *L) {
     return CKB_LOAD6(L, ckb_load_header_by_field);
 }
 
+int lua_ckb_spawn(lua_State *L) {
+    printf("spawn is currently not implementd in ckb-lua\n");
+    lua_pushinteger(L, LUA_ERROR_NOT_IMPLEMENTED);
+    return 1;
+}
+
+int lua_ckb_spawn_cell(lua_State *L) {
+    printf("spawn_cell is currently not implementd in lua\n");
+    lua_pushinteger(L, LUA_ERROR_NOT_IMPLEMENTED);
+    return 1;
+}
+
+int lua_ckb_set_content(lua_State *L) {
+    FIELD fields[] = {
+        {"buffer", BUFFER},
+    };
+    GET_FIELDS_WITH_CHECK(L, fields, 1, 1);
+    uint64_t length = fields[0].arg.buffer.length;
+    int ret = ckb_set_content(fields[0].arg.buffer.buffer, &length);
+    if (ret != 0) {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    if (length != fields[0].arg.buffer.length) {
+        printf("Passed content too large\n");
+        lua_pushinteger(L, LUA_ERROR_INVALID_STATE);
+        return 1;
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+int lua_ckb_get_memory_limit(lua_State *L) {
+    int ret = ckb_get_memory_limit();
+    if (ret != 0) {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
 static const luaL_Reg ckb_syscall[] = {
     {"dump", lua_ckb_dump},
     {"exit", lua_ckb_exit},
@@ -839,6 +881,11 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_cell_by_field", lua_ckb_load_cell_by_field},
     {"load_input_by_field", lua_ckb_load_input_by_field},
     {"load_header_by_field", lua_ckb_load_header_by_field},
+
+    {"spawn", lua_ckb_spawn},
+    {"spawn_cell", lua_ckb_spawn_cell},
+    {"set_content", lua_ckb_set_content},
+    {"get_memory_limit", lua_ckb_get_memory_limit},
     {NULL, NULL}};
 
 LUAMOD_API int luaopen_ckb(lua_State *L) {
@@ -857,6 +904,7 @@ LUAMOD_API int luaopen_ckb(lua_State *L) {
     SET_FIELD(L, LUA_ERROR_INVALID_ARGUMENT, "LUA_ERROR_INVALID_ARGUMENT")
     SET_FIELD(L, LUA_ERROR_INVALID_STATE, "LUA_ERROR_INVALID_STATE")
     SET_FIELD(L, LUA_ERROR_SYSCALL, "LUA_ERROR_SYSCALL")
+    SET_FIELD(L, LUA_ERROR_NOT_IMPLEMENTED, "LUA_ERROR_NOT_IMPLEMENTED")
 
     SET_FIELD(L, CKB_SOURCE_INPUT, "SOURCE_INPUT")
     SET_FIELD(L, CKB_SOURCE_OUTPUT, "SOURCE_OUTPUT")
