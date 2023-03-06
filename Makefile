@@ -15,7 +15,7 @@ DOCKER_EXTRA_FLAGS ?=
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 PORT ?= 9999
 
-all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest build/dylibexample
+all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest build/dylibexample build/spawnexample
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -30,6 +30,9 @@ build/dylibtest: tests/test_cases/dylibtest.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/dylibexample: examples/dylib.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+
+build/spawnexample: examples/spawn.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/lua-loader.o: lua-loader/lua-loader.c
@@ -58,6 +61,8 @@ clean-local:
 	rm -f build/lua-loader*
 	rm -f build/libckblua*
 	rm -f build/dylibtest
+	rm -f build/dylibexample
+	rm -f build/spawnexample
 
 clean: clean-local
 	make -C lualib clean

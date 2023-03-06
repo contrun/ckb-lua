@@ -56,6 +56,9 @@ hello_world:
 dylibtest:
 	cd tests_rust; cargo test run_dylib_tests -- --nocapture 2>&1 | grep -v -F 'Code after exit_script should be unreachable' | grep -q -F 'hello world'
 
+spawnexample:
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file spawn.json --cell-index 0 --cell-type input --script-group-type lock
+
 lua-fs-util:
 	./lua-fs-pack-and-unpack.sh
 	./lua-fs-unpack-existing.sh
@@ -66,7 +69,7 @@ all:
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, bn.lua)
 
-ci: hello_world save-and-load-file-system-data partial_loading memory_leak dylibtest lua-fs-util
+ci: hello_world save-and-load-file-system-data partial_loading memory_leak dylibtest lua-fs-util spawnexample
 	$(call run_ci, test_require.lua)
 	$(call run_ci, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
@@ -83,11 +86,10 @@ benchmark:
 test:
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file bn.lua --bin ../../build/lua-loader.debug -- -r
 
-hello_world:
-	$(call run, hello_world.lua)
-
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
 
 run-debugger:
 	$(CKB-DEBUGGER) --mode gdb --gdb-listen 127.0.0.1:${PORT} --read-file out_of_memory.lua --bin ../../build/lua-loader.debug -- -r
+
+
