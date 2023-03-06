@@ -200,7 +200,8 @@ int load_lua_code(lua_State *L, char *buf, size_t buflen) {
 
     int ret = ckb_load_fs(buf, buflen);
     if (ret) {
-        return ret;
+        printf("Error while loading file system: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
 
     static const char *FILENAME = "main.lua";
@@ -213,15 +214,17 @@ int load_lua_code_from_source(lua_State *L, uint16_t lua_loader_args,
     size_t buflen = 0;
     int ret = ckb_load_cell_data(NULL, &buflen, 0, index, source);
     if (ret) {
-        return ret;
+        printf("Error while loading cell data: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     buf = malloc(buflen);
     if (buf == NULL) {
-        return LUA_ERROR_OUT_OF_MEMORY;
+        return -LUA_ERROR_OUT_OF_MEMORY;
     }
     ret = ckb_load_cell_data(buf, &buflen, 0, index, source);
     if (ret) {
-        return ret;
+        printf("Error while loading cell data: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     return load_lua_code(L, buf, buflen);
 }
@@ -231,7 +234,8 @@ int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
     size_t index = 0;
     int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
     if (ret) {
-        return ret;
+        printf("Error while looking for dep: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     return load_lua_code_from_source(L, lua_loader_args, CKB_SOURCE_CELL_DEP,
                                      index);
@@ -243,17 +247,18 @@ int load_lua_code_from_cell_data(lua_State *L) {
     uint64_t len = SCRIPT_SIZE;
     int ret = ckb_load_script(script, &len, 0);
     if (ret) {
-        return ret;
+        printf("Error while loading script: %d\n", ret);
+        return -LUA_ERROR_SYSCALL;
     }
     if (len > SCRIPT_SIZE) {
-        return LUA_ERROR_SCRIPT_TOO_LONG;
+        return -LUA_ERROR_SCRIPT_TOO_LONG;
     }
     mol_seg_t script_seg;
     script_seg.ptr = (uint8_t *)script;
     script_seg.size = len;
 
     if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
-        return LUA_ERROR_ENCODING;
+        return -LUA_ERROR_ENCODING;
     }
 
     // The script arguments are in the following format
@@ -261,7 +266,7 @@ int load_lua_code_from_cell_data(lua_State *L) {
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
     if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE) {
-        return LUA_ERROR_INVALID_ARGUMENT;
+        return -LUA_ERROR_INVALID_ARGUMENT;
     }
     uint16_t lua_loader_args = *(args_bytes_seg.ptr);
 
@@ -315,10 +320,10 @@ static int pushargs(lua_State *L) {
 /* bits of various argument indicators in 'args' */
 #define has_error 1 /* bad option */
 #define has_e 8     /* -e */
-#define has_r 4     /* -r, to run scripts, with ability to load local files*/
+#define has_r 4     /* -r, to run scripts, with ability to load local files */
 #define has_f 16    /* -f, to enable file system support */
 #define has_t 32    /* -t, for file system tests */
-#define has_l 64    /* -l, to run scripts, without ability to load local files*/
+#define has_l 64 /* -l, to run scripts, without ability to load local files */
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -334,13 +339,7 @@ static int collectargs(char **argv, int *first) {
             return args;       /* stop handling options */
         switch (argv[i][1]) {  /* else check option */
             case 'e':
-                args |= has_e;            /* FALLTHROUGH */
-                if (argv[i][2] == '\0') { /* no concatenated argument? */
-                    i++;                  /* try next 'argv' */
-                    if (argv[i] == NULL || argv[i][0] == '-')
-                        return has_error; /* no next argument or it is another
-                                             option */
-                }
+                args |= has_e;
                 break;
             case 'r':
                 args |= has_r;
@@ -367,25 +366,8 @@ static int collectargs(char **argv, int *first) {
 ** 'W', which also affects the state.
 ** Returns 0 if some code raises an error.
 */
-static int runargs(lua_State *L, char **argv, int n) {
-    int i;
-    for (i = 1; i < n; i++) {
-        int option = argv[i][1];
-        lua_assert(argv[i][0] == '-'); /* already checked */
-        switch (option) {
-            case 'e': {
-                int status;
-                char *extra = argv[i] + 2; /* both options need an argument */
-                if (*extra == '\0') extra = argv[++i];
-                lua_assert(extra != NULL);
-                status = (option == 'e') ? dostring(L, extra, "=(command line)")
-                                         : dolibrary(L, extra);
-                if (status != LUA_OK) return 0;
-                break;
-            }
-        }
-    }
-    return 1;
+static int run_from_args(lua_State *L, char **argv, int n) {
+    return dostring(L, argv[n], "=(command line)");
 }
 
 int read_file(char *buf, int size) {
@@ -400,8 +382,12 @@ static int run_from_file(lua_State *L, int local_access_enabled) {
     char buf[1024 * 512];
     int count = read_file(buf, sizeof(buf));
     if (count < 0 || count == sizeof(buf)) {
-        printf("error reading from file");
-        return 0;
+        if (count == sizeof(buf)) {
+            printf("Error while reading from file: file too large\n");
+        } else {
+            printf("Error while reading from file: %d\n", count);
+        }
+        return -LUA_ERROR_INVALID_STATE;
     }
     buf[count] = 0;
     int status = dochunk(L, luaL_loadbuffer(L, buf, count, "=(read file)"));
@@ -449,11 +435,13 @@ static int pmain(lua_State *L) {
     luaopen_ckb(L);
     createargtable(L, argv, argc, script); /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
-    if (!runargs(L, argv, script))         /* execute arguments -e and -l */
-        return 0;                          /* something failed */
     int ret;
     if (args & has_f) {
         enable_fs_access(1);
+    }
+    if (args & has_e) {
+        ret = run_from_args(L, argv, script);
+        goto exit;
     }
     if (args & has_t) {
         enable_fs_access(1);
@@ -477,22 +465,20 @@ int main(int argc, char **argv) {
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
         l_message(argv[0], "cannot create state: not enough memory");
-        return -1;
+        return -LUA_ERROR_OUT_OF_MEMORY;
     }
     lua_pushcfunction(L, &pmain);   /* to call 'pmain' in protected mode */
     lua_pushinteger(L, argc);       /* 1st argument */
     lua_pushlightuserdata(L, argv); /* 2nd argument */
-    // Lua interpreter pcall result that represents the error while calling the
-    // function pmain. This may be non-zero if, for example, the syntax of the
-    // lua script is wrong.
     status = lua_pcall(L, 2, 1, 0);
+    if (status != LUA_OK) {
+        l_message(argv[0], "failed to run lua");
+        lua_close(L);
+        return -status;
+    }
     // Lua script execution result (an optional return code set by the script)
     result = lua_tointeger(L, -1);
     lua_close(L);
-    // Use negative number to represent lua interpreter error.
-    if (status > 0) {
-        return -status;
-    }
     return result;
 }
 

@@ -1,6 +1,7 @@
 #include "ckb_dlfcn.h"
 #include "ckb_syscalls.h"
 #include "lauxlib.h"
+#include "lua-ckb.h"
 #include "lualib.h"
 #include <stdlib.h>
 #include <stdarg.h>
@@ -855,6 +856,7 @@ LUAMOD_API int luaopen_ckb(lua_State *L) {
     SET_FIELD(L, LUA_ERROR_SCRIPT_TOO_LONG, "LUA_ERROR_SCRIPT_TOO_LONG")
     SET_FIELD(L, LUA_ERROR_INVALID_ARGUMENT, "LUA_ERROR_INVALID_ARGUMENT")
     SET_FIELD(L, LUA_ERROR_INVALID_STATE, "LUA_ERROR_INVALID_STATE")
+    SET_FIELD(L, LUA_ERROR_SYSCALL, "LUA_ERROR_SYSCALL")
 
     SET_FIELD(L, CKB_SOURCE_INPUT, "SOURCE_INPUT")
     SET_FIELD(L, CKB_SOURCE_OUTPUT, "SOURCE_OUTPUT")
