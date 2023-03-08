@@ -18,10 +18,13 @@ jobs:
         make all-via-docker
     - name: Install ckb-debugger
       run: |
-        cargo install --force --git https://github.com/nervosnetwork/ckb-standalone-debugger ckb-debugger
-        cargo install --force --git https://github.com/mohanson/ckb-standalone-debugger --branch syscall_spawn --root ~/.cargo-tmp/ ckb-debugger
+        cd ..
+        git clone https://github.com/mohanson/ckb-standalone-debugger
+        cd ckb-standalone-debugger/ckb-debugger
+        git checkout syscall_spawn
+        cargo install --path .
     - name: Run cases
       run: |
         cd tests/official && make ci
-        cd ../test_cases && make CKB-DEBUGGER-WITH-SPAWN-SUPPORT="$HOME/.cargo-tmp/bin/ckb-debugger" ci
+        cd ../test_cases && make ci
         cd ../ckb-c-stdlib-tests && make all-via-docker && make ci

@@ -1,7 +1,6 @@
 
 
 CKB-DEBUGGER ?= ckb-debugger
-CKB-DEBUGGER-WITH-SPAWN-SUPPORT ?= $(CKB-DEBUGGER)
 PORT ?= 9999
 TEST ?= tmp
 MAX-CYCLES ?= 99999999999
@@ -58,7 +57,7 @@ dylibtest:
 	cd tests_rust; cargo test run_dylib_tests -- --nocapture 2>&1 | grep -v -F 'Code after exit_script should be unreachable' | grep -q -F 'hello world'
 
 spawnexample:
-	RUST_LOG=debug $(CKB-DEBUGGER-WITH-SPAWN-SUPPORT) --max-cycles $(MAX-CYCLES) --tx-file spawn.json --cell-index 0 --cell-type input --script-group-type lock
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file spawn.json --cell-index 0 --cell-type input --script-group-type lock
 
 lua-fs-util:
 	./lua-fs-pack-and-unpack.sh
