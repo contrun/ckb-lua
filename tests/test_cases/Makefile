@@ -56,6 +56,9 @@ hello_world:
 dylibtest:
 	cd tests_rust; cargo test run_dylib_tests -- --nocapture 2>&1 | grep -v -F 'Code after exit_script should be unreachable' | grep -q -F 'hello world'
 
+spawnexample:
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file spawn.json --cell-index 0 --cell-type input --script-group-type lock
+
 lua-fs-util:
 	./lua-fs-pack-and-unpack.sh
 	./lua-fs-unpack-existing.sh
@@ -79,15 +82,16 @@ benchmark:
 	perf stat $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file msgpack-benchmark.bc --bin ../../build/lua-loader.debug -- -r
 	perf stat lua msgpack-benchmark.bc
 
-
 test:
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file bn.lua --bin ../../build/lua-loader.debug -- -r
 
 hello_world:
-	$(call run, hello_world.lua)
+	RUST_LOG=debug $(CKB-DEBUGGER) --bin ../../build/lua-loader.debug -- -e 'print("hello world")' 2>&1 | fgrep 'Run result: 0'
 
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
 
 run-debugger:
 	$(CKB-DEBUGGER) --mode gdb --gdb-listen 127.0.0.1:${PORT} --read-file out_of_memory.lua --bin ../../build/lua-loader.debug -- -r
+
+
