@@ -19,9 +19,8 @@ jobs:
     - name: Install ckb-debugger
       run: |
         cd ..
-        git clone https://github.com/mohanson/ckb-standalone-debugger
+        git clone https://github.com/nervosnetwork/ckb-standalone-debugger
         cd ckb-standalone-debugger/ckb-debugger
-        git checkout syscall_spawn
         cargo install --path .
     - name: Run cases
       run: |

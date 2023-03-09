@@ -882,6 +882,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_input_by_field", lua_ckb_load_input_by_field},
     {"load_header_by_field", lua_ckb_load_header_by_field},
 
+    // Requires spawn syscall, which will be available in next hardfork
     {"spawn", lua_ckb_spawn},
     {"spawn_cell", lua_ckb_spawn_cell},
     {"set_content", lua_ckb_set_content},
