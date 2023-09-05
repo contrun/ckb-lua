@@ -458,7 +458,16 @@ exit:
     return 1;
 }
 
+int* test_func(int parameter1, int parameter2) {
+    int *mem = (int *)malloc(sizeof(parameter1) + sizeof(parameter2));
+    mem[0] = parameter1;
+    mem[1] = parameter2;
+    return mem;
+}
+
 int main(int argc, char **argv) {
+    printf("hello world %s", __func__);
+    free((void *) test_func(42, 43));
     // Always enable exit in standalone mode
     s_lua_exit_enabled = 1;
     int status, result;

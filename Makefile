@@ -14,13 +14,13 @@ DOCKER_EXTRA_FLAGS ?=
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain:gnu-jammy-20230214
 PORT ?= 9999
 
-all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest build/dylibexample build/spawnexample
+all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest build/dylibexample build/spawnexample build/test
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
 
 docker-interactive:
-	docker run --user ${DOCKER_USER} --rm -it -v "${CURRENT_DIR}:/code" --workdir /code --entrypoint /bin/bash ${DOCKER_EXTRA_FLAGS} ${BUILDER_DOCKER}
+	docker run --user ${DOCKER_USER} --rm -it -v "${CURRENT_DIR}:/code" --workdir /code --entrypoint /bin/bash ${DOCKER_EXTRA_FLAGS} ${BUILDER_DOCKER}makefile
 
 lualib/liblua.a:
 	make -C lualib liblua.a
