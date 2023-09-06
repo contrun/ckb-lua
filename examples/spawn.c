@@ -6,12 +6,18 @@
 int main() {
   const char *argv[] = {"-e", "local m = arg[2] .. arg[3]; ckb.set_content(m)",
                         "hello", "world"};
-  int8_t exit_code = -1;
   uint8_t content[80] = {};
   uint64_t content_length = 80;
+  int8_t exit_code = -1;
 
-  int success =
-      ckb_spawn(8, 1, 3, 0, 4, argv, &exit_code, &content[0], &content_length);
+  spawn_args_t spgs = {
+      .memory_limit = 8,
+      .exit_code = &exit_code,
+      .content = content,
+      .content_length = &content_length,
+  };
+
+  int success = ckb_spawn(1, 3, 0, 4, argv, &spgs);
   if (success != 0) {
     return 1;
   }
