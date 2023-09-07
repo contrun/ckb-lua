@@ -27,13 +27,13 @@ lualib/liblua.a:
 	make -C lualib liblua.a
 
 build/dylibtest: tests/test_cases/dylibtest.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< lualib/liblua.a $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a 
 
 build/dylibexample: examples/dylib.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< lualib/liblua.a $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/spawnexample: examples/spawn.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< lualib/liblua.a $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/lua-loader.o: lua-loader/lua-loader.c
 	$(CC) -c $(CFLAGS) -o $@ $<

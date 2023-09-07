@@ -2,6 +2,7 @@
 #define LUA_C_STDLIB_PRINTF_H_
 
 #undef CKB_C_STDLIB_PRINTF
+#define CKB_MALLOC_DECLARATION_ONLY 1
 
 // Code copied from
 // https://github.com/mpaland/printf/tree/d3b984684bb8a8bdc48cc7a1abecb93ce59bbe3e
@@ -27,7 +28,6 @@ void _putchar(char character);
  * \return The number of characters that are written into the array, not
  * counting the terminating null character
  */
-#define printf printf_
 int printf_(const char *format, ...);
 
 /**
@@ -1028,6 +1028,33 @@ int fctprintf(void (*out)(char character, void *arg), void *arg,
   const int ret = _vsnprintf(_out_fct, (char *)(uintptr_t)&out_fct_wrap,
                              (size_t)-1, format, va);
   va_end(va);
+  return ret;
+}
+
+// Default PRINTF_BUFFER_SIZE
+#ifndef CKB_C_STDLIB_PRINTF_BUFFER_SIZE
+#define CKB_C_STDLIB_PRINTF_BUFFER_SIZE 256
+#endif
+// syscall
+int ckb_debug(const char *s);
+
+int printf(const char *format, ...) {
+  static char buf[CKB_C_STDLIB_PRINTF_BUFFER_SIZE];
+  va_list va;
+  va_start(va, format);
+  int ret = vsnprintf_(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
+  va_end(va);
+  ckb_debug(buf);
+  return ret;
+}
+
+int ckb_printf(const char *format, ...) {
+  static char buf[CKB_C_STDLIB_PRINTF_BUFFER_SIZE];
+  va_list va;
+  va_start(va, format);
+  int ret = vsnprintf_(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
+  va_end(va);
+  ckb_debug(buf);
   return ret;
 }
 
