@@ -1,4 +1,3 @@
-#define CKB_C_STDLIB_PRINTF 1
 #define CKB_MALLOC_DECLARATION_ONLY 1
 
 #define lua_c

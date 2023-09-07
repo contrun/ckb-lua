@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "printf_impl.h"
 #include "malloc_impl.h"
 
 #define CKB_SS (sizeof(size_t))
