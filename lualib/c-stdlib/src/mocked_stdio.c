@@ -1,5 +1,4 @@
-
-#include "mocked_stdio.h"
+#include "../mocked_stdio.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -151,17 +150,8 @@ int fprintf(FILE *__stream, const char *__format, ...) {
     return 0;
 }
 
-int sprintf(char *__s, const char *__format, ...) {
-    NOT_IMPL(sprintf);
-    return 0;
-}
-
 int vfprintf(FILE *__s, const char *__format, ...) {
     NOT_IMPL(vfprintf);
-    return 0;
-}
-int vprintf(const char *__format, ...) {
-    NOT_IMPL(vprintf);
     return 0;
 }
 int vsprintf(char *__s, const char *__format, ...) {

@@ -1,4 +1,4 @@
-#include "mocked_math.h"
+#include "../mocked_math.h"
 #include <stdint.h>
 
 #include "math_pow.c"
