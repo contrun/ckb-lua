@@ -12,7 +12,7 @@
 
 #include <math.h>
 
-#include "mocked_math.h"
+#include "my_math.h"
 
 #include <stdlib.h>
 

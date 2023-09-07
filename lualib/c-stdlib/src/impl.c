@@ -10,8 +10,8 @@
 
 #include "printf_impl.h"
 #include "malloc_impl.h"
-#include "mocked_stdio.c"
-#include "mocked_math.c"
+#include "mocked_stdio_impl.h"
+#include "mocked_math_impl.h"
 
 #define CKB_SS (sizeof(size_t))
 #define CKB_ALIGN (sizeof(size_t) - 1)

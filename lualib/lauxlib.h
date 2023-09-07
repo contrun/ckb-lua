@@ -8,7 +8,7 @@
 #define lauxlib_h
 
 #include <stddef.h>
-#include "mocked_stdio.h"
+#include "my_stdio.h"
 
 #include "lua.h"
 #include "luaconf.h"

@@ -10,7 +10,7 @@
 #include "lgc.h"
 
 #include <string.h>
-#include "mocked_stdio.h"
+#include "my_stdio.h"
 
 #include "ldebug.h"
 #include "ldo.h"
