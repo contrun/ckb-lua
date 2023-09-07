@@ -10,7 +10,7 @@ CC=riscv64-unknown-linux-gnu-gcc
 # -ULUA_USE_LINUX -ULUA_USE_POSIX to make lua dependencies minimal,
 # otherwise, we may unable to find various platform dependent symbols, e.g.
 # setsignal.
-CFLAGS= -D__ISO_C_VISIBLE=1999 -O3 -Wall -Wextra -DLUA_COMPAT_5_3 -ULUA_USE_LINUX -ULUA_USE_POSIX $(SYSCFLAGS) $(MYCFLAGS)
+CFLAGS= -Ic-stdlib -DCKB_MALLOC_DECLARATION_ONLY=1 -D__ISO_C_VISIBLE=1999 -O3 -Wall -Wextra -DLUA_COMPAT_5_3 -ULUA_USE_LINUX -ULUA_USE_POSIX $(SYSCFLAGS) $(MYCFLAGS)
 LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 
@@ -37,7 +37,7 @@ PLATS= guess aix bsd c89 freebsd generic linux linux-readline macosx mingw posix
 
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o
-LIB_O=	lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o lmathlib.o loadlib.o lstrlib.o ltablib.o lutf8lib.o linit.o mocked_stdio.o mocked_math.o
+LIB_O=	lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o lmathlib.o loadlib.o lstrlib.o ltablib.o lutf8lib.o linit.o mocked_stdio.o mocked_math.o stdlib.o
 BASE_O= $(CORE_O) $(LIB_O) $(MYOBJS)
 
 LUA_T=	lua
@@ -156,6 +156,9 @@ lparser.o:
 lcode.o:
 	$(CC) $(CFLAGS) $(CMCFLAGS) -c lcode.c
 
+stdlib.o:
+	$(CC) $(CFLAGS) $(CMCFLAGS) -o $@ -c c-stdlib/src/impl.c
+
 # DO NOT DELETE
 
 lapi.o: lapi.c lprefix.h lua.h luaconf.h lapi.h llimits.h lstate.h \
@@ -220,6 +223,5 @@ lvm.o: lvm.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
  ltable.h lvm.h ljumptab.h
 lzio.o: lzio.c lprefix.h lua.h luaconf.h llimits.h lmem.h lstate.h \
  lobject.h ltm.h lzio.h
-mocked_stdio.o: mocked_stdio.h mocked_stdio.c
 
 # (end of Makefile)

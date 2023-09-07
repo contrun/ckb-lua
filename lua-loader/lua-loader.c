@@ -1,5 +1,5 @@
-#define CKB_C_STDLIB_MALLOC 1
 #define CKB_C_STDLIB_PRINTF 1
+#define CKB_MALLOC_DECLARATION_ONLY 1
 
 #define lua_c
 
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "my_string.h"
 
 #include "lauxlib.h"
 #include "lprefix.h"
@@ -23,6 +24,8 @@
 
 #define LUA_LOADER_ARGS_SIZE 2
 #define BLAKE2B_BLOCK_SIZE 32
+
+extern void malloc_config(uintptr_t min, uintptr_t max);
 
 int exit(int c) {
     ckb_exit(c);
