@@ -3,9 +3,6 @@
 
 #define CKB_MALLOC_DECLARATION_ONLY 1
 
-#include "ckb_syscalls.h"
-
-
 #if defined(malloc)
 #undef malloc
 #endif
