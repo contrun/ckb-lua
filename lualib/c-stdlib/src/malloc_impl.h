@@ -1,6 +1,8 @@
 #ifndef LUA_C_STDLIB_MALLOC_H_
 #define LUA_C_STDLIB_MALLOC_H_
 
+#define CKB_MALLOC_DECLARATION_ONLY 1
+
 #include "ckb_syscalls.h"
 
 

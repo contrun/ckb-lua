@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "malloc_impl.h"
+
 #define CKB_SS (sizeof(size_t))
 #define CKB_ALIGN (sizeof(size_t) - 1)
 #define CKB_ONES ((size_t)-1 / UCHAR_MAX)
@@ -307,15 +309,6 @@ static const struct lconv posix_lconv = {
 struct lconv *localeconv(void) {
   return (void *)&posix_lconv;
 }
-
-#ifdef CKB_C_STDLIB_MALLOC
-#include "malloc_impl.h"
-#else
-void *malloc(size_t size) { return NULL; }
-void free(void *ptr) {}
-void *calloc(size_t nmemb, size_t size) { return NULL; }
-void *realloc(void *ptr, size_t size) { return NULL; }
-#endif
 
 /* Copied from
  * https://github.com/bminor/musl/blob/46d1c7801bb509e1097e8fadbaf359367fa4ef0b/src/setjmp/riscv64/setjmp.S
