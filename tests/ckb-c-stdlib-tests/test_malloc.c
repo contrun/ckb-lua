@@ -10,6 +10,7 @@
 #include "ckb_syscalls.h"
 #include "helper.h"
 
+extern void malloc_config(uintptr_t min, uintptr_t max);
 #define COUNT_OF(a) (sizeof(a) / sizeof(a[0]))
 
 void check_heap(void) {
