@@ -1,3 +1,3 @@
 [submodule "include/ckb-c-stdlib"]
 	path = include/ckb-c-stdlib
-	url = https://github.com/contrun/ckb-c-stdlib.git
+	url = https://github.com/nervosnetwork/ckb-c-stdlib.git
