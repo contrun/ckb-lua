@@ -1,12 +1,12 @@
-#define CKB_C_STDLIB_PRINTF
-#define CKB_C_STDLIB_MALLOC
-#define PRINTF_DISABLE_SUPPORT_FLOAT
+#define CKB_MALLOC_DECLARATION_ONLY 1
+#define CKB_C_STDLIB_PRINTF 1
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "malloc_impl.h"
 #include "ckb_syscalls.h"
 #include "helper.h"
 

@@ -9,6 +9,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include "my_stddef.h"
 
 /*
 ** ===================================================================

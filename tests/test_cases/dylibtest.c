@@ -1,4 +1,6 @@
-#define CKB_C_STDLIB_PRINTF
+#define CKB_MALLOC_DECLARATION_ONLY 1
+#define CKB_PRINTF_DECLARATION_ONLY 1
+
 #include <stdio.h>
 
 #include "blake2b.h"

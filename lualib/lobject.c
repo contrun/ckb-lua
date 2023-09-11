@@ -14,7 +14,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mocked_stdio.h"
+#include "my_stdio.h"
 
 #include "lctype.h"
 #include "ldebug.h"
