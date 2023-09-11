@@ -5,6 +5,7 @@ CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 
+# See comments in lualib/Makefile for why __ISO_C_VISIBLE=1999 is needed
 CFLAGS := -D__ISO_C_VISIBLE=1999 -fPIC -O3 -fno-builtin -nostdinc -nostdlib -nostartfiles -fvisibility=hidden -fdata-sections -ffunction-sections -I lualib -I lualib/c-stdlib -I include/ckb-c-stdlib -I include/ckb-c-stdlib/libc -I include/ckb-c-stdlib/molecule -Wall -Werror -Wno-nonnull -Wno-nonnull-compare -Wno-unused-function -Wno-error=maybe-uninitialized -g
 
 LDFLAGS := -nostdlib -nostartfiles -fno-builtin -Wl,-static -fdata-sections -ffunction-sections -Wl,--gc-sections
