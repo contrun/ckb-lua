@@ -675,7 +675,7 @@ int lua_ckb_exit(lua_State *L) {
         int code = lua_get_int_code(L);
         ckb_exit(code);
     } else {
-        luaL_error(L, "exit in ckb-lua is not enabled");
+        luaL_error(L, "exit in ckb-lua-vm is not enabled");
     }
     return 0;
 }
@@ -814,7 +814,7 @@ int lua_ckb_load_header_by_field(lua_State *L) {
 }
 
 int lua_ckb_spawn(lua_State *L) {
-    printf("spawn is currently not implementd in ckb-lua\n");
+    printf("spawn is currently not implementd in ckb-lua-vm\n");
     lua_pushinteger(L, LUA_ERROR_NOT_IMPLEMENTED);
     return 1;
 }

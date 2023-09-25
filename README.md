@@ -1,6 +1,6 @@
-[![CI](https://github.com/nervosnetwork/ckb-lua/actions/workflows/ci.yml/badge.svg)](https://github.com/nervosnetwork/ckb-lua/actions/workflows/ci.yml)
+[![CI](https://github.com/nervosnetwork/ckb-lua-vm/actions/workflows/ci.yml/badge.svg)](https://github.com/nervosnetwork/ckb-lua-vm/actions/workflows/ci.yml)
 
-# ckb-lua
+# ckb-lua-vm
 A project to help developers writing script in Lua on [CKB-VM](https://github.com/nervosnetwork/ckb-vm).
 
 
@@ -31,8 +31,8 @@ Use `build/lua-loader` as a script. Require hacking for further requirement.
 
 ## Command Line Arguments
 
-A couple of arguments may be passed to ckb-lua.
-If no command line arguments is passed to ckb-lua, ckb-lua will run the script contained in cell data,
+A couple of arguments may be passed to ckb-lua-vm.
+If no command line arguments is passed to ckb-lua-vm, ckb-lua-vm will run the script contained in cell data,
 which is assumed to be a valid exectuable lua file.
 
 The following are the supported command line arguments.
@@ -40,4 +40,4 @@ To test the `ADDITIONAL_ARGUMENTS` locally, we can run `ckb-debugger --bin ./bui
 
 - `-e` is used to evaluate some lua script. For example, running `ckb-debugger --bin ./build/lua-loader.debug -- -e 'print("abcdefg")'` will print out `abcdefg` in to console.
 - `-f` is used to enable [file system access](./docs/fs.md). For example, running `ckb-debugger --bin ./build/lua-loader.debug -- -f` would evaluate the `main.lua` file within the file system in the cell data.
-- `-r` is used to execute coded loaded from ckb-debugger. For example, running `ckb-debugger ---read-file strings.lua --bin ./build/lua-loader.debug -- -r` will execute the lua file `strings.lua`. Normally, ckb-lua can not read files from local file system, we add this parameter (along with the `--read-file` parameter of `ckb-debugger`) to facilitate testing of running local lua files.
+- `-r` is used to execute coded loaded from ckb-debugger. For example, running `ckb-debugger ---read-file strings.lua --bin ./build/lua-loader.debug -- -r` will execute the lua file `strings.lua`. Normally, ckb-lua-vm can not read files from local file system, we add this parameter (along with the `--read-file` parameter of `ckb-debugger`) to facilitate testing of running local lua files.

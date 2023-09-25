@@ -1,4 +1,4 @@
-mod lib_ckb_lua;
+mod lib_ckb_lua_vm;
 
 use ckb_traits::{CellDataProvider, HeaderProvider};
 use ckb_types::{

@@ -1,4 +1,4 @@
-To faciliate the sharing of lua modules, we created a file system called Simple Lua File System that can be mounted by ckb-lua.
+To faciliate the sharing of lua modules, we created a file system called Simple Lua File System that can be mounted by ckb-lua-vm.
 Files within the file system may be made available for lua scripts to read and execute,
 e.g. running `require('mymodule')` and `io.open('myfile')`.
 The file system can be stored in any cell whose data are reachable from lua scripts,
