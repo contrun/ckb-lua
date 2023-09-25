@@ -31,8 +31,8 @@ fn debug_printer(script: &Byte32, msg: &str) {
 fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
     let mut rng = <StdRng as SeedableRng>::from_seed([42u8; 32]);
 
-    // setup lib_ckb_lua dep
-    let lib_ckb_lua_out_point = {
+    // setup lib_ckb_lua_vm dep
+    let lib_ckb_lua_vm_out_point = {
         let contract_tx_hash = {
             let mut buf = [0u8; 32];
             rng.fill(&mut buf);
@@ -41,17 +41,17 @@ fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
         OutPoint::new(contract_tx_hash, 0)
     };
     // dep contract code
-    let lib_ckb_lua_cell = CellOutput::new_builder()
+    let lib_ckb_lua_vm_cell = CellOutput::new_builder()
         .capacity(
             Capacity::bytes(LIB_CKB_LUA_BIN.len())
                 .expect("script capacity")
                 .pack(),
         )
         .build();
-    let lib_ckb_lua_cell_data_hash = CellOutput::calc_data_hash(&LIB_CKB_LUA_BIN);
+    let lib_ckb_lua_vm_cell_data_hash = CellOutput::calc_data_hash(&LIB_CKB_LUA_BIN);
     dummy.cells.insert(
-        lib_ckb_lua_out_point.clone(),
-        (lib_ckb_lua_cell, LIB_CKB_LUA_BIN.clone()),
+        lib_ckb_lua_vm_out_point.clone(),
+        (lib_ckb_lua_vm_cell, LIB_CKB_LUA_BIN.clone()),
     );
 
     // setup dylib_test dep
@@ -86,7 +86,7 @@ fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
                 .dep_type(DepType::Code.into())
                 .build(),
             CellDep::new_builder()
-                .out_point(lib_ckb_lua_out_point)
+                .out_point(lib_ckb_lua_vm_out_point)
                 .dep_type(DepType::Code.into())
                 .build(),
         ])
@@ -104,9 +104,9 @@ fn gen_tx(dummy: &mut DummyDataLoader) -> TransactionView {
     };
     let out_point = OutPoint::new(previous_tx_hash, 0);
 
-    let mut buf = BytesMut::with_capacity(2 + lib_ckb_lua_cell_data_hash.as_slice().len() + 1);
+    let mut buf = BytesMut::with_capacity(2 + lib_ckb_lua_vm_cell_data_hash.as_slice().len() + 1);
     buf.extend_from_slice(&[0x00u8; 2]);
-    buf.extend_from_slice(lib_ckb_lua_cell_data_hash.as_slice());
+    buf.extend_from_slice(lib_ckb_lua_vm_cell_data_hash.as_slice());
     buf.put_u8(ScriptHashType::Data1.into());
     let args = buf.freeze();
 

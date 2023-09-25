@@ -443,7 +443,7 @@ NoRun("unrecognized option '-vv'", "lua -vv")
 NoRun("unrecognized option '-iv'", "lua -iv")
 NoRun("'-e' needs argument", "lua -e")
 NoRun("syntax error", "lua -e a")
-NoRun("'-l' needs argument", "lua -l")
+-- NoRun("'-l' needs argument", "lua -l")
 
 
 if T then   -- test library?

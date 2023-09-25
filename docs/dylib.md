@@ -2,7 +2,7 @@
 
 To facilitate the development of contracts on ckb platform, we recently ported Lua, a scripting language famous for its simplicity and ease of use, to the ckb-vm. Ckb developers can now both run the standalone Lua interpreter in the ckb platform and embed Lua code into their main ckb contracts. This greatly lower the barrier to entry for ckb contracts development.
 
-[dylib.c](https://github.com/XuJiandong/ckb-lua/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) a sample program that evaluates lua code with ckb-lua shared library. We showcase how to load and unpack script args by a few lines of Lua code, i.e.
+[dylib.c](https://github.com/nervosnetwork/ckb-lua-vm/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) a sample program that evaluates lua code with ckb-lua-vm shared library. We showcase how to load and unpack script args by a few lines of Lua code, i.e.
 
 ```lua
 local _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
@@ -12,19 +12,19 @@ if err == nil then
 end
 ```
 
-Of course, this example is not enough for real world usage, but this article should be enough to show how to use ckb-lua shared library from the main contract program. You can unleash the potential of Lua with your creativity afterward. For the curious, see here for [an implementation of sudt in lua](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/contracts/sudt.lua). Also note that, the sample code is written in c. As an alternative, you can write test code in rust. Both [loading shared library](https://docs.rs/ckb-std/latest/ckb_std/dynamic_loading/index.html) and mocking transaction to do unit tests are easy in rust. 
+Of course, this example is not enough for real world usage, but this article should be enough to show how to use ckb-lua-vm shared library from the main contract program. You can unleash the potential of Lua with your creativity afterward. For the curious, see here for [an implementation of sudt in lua](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/contracts/sudt.lua). Also note that, the sample code is written in c. As an alternative, you can write test code in rust. Both [loading shared library](https://docs.rs/ckb-std/latest/ckb_std/dynamic_loading/index.html) and mocking transaction to do unit tests are easy in rust. 
 
 I will now explain what this sample code does and how to run it.
 
 # Building Shared Library
 
-The sample code depends on `libckblua.so` shared library to run Lua code. We need to obtain the source of ckb-lua from [the github repository](https://github.com/XuJiandong/ckb-lua), and build it ourselves. `make all-via-docker` is enough to build all the binaries. `./build/libckblua.so` may be used afterward. The sample program `./build/dylibexample` built from [dylib.c](https://github.com/XuJiandong/ckb-lua/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) is also available to use.
+The sample code depends on `libckblua.so` shared library to run Lua code. We need to obtain the source of ckb-lua-vm from [the github repository](https://github.com/nervosnetwork/ckb-lua-vm), and build it ourselves. `make all-via-docker` is enough to build all the binaries. `./build/libckblua.so` may be used afterward. The sample program `./build/dylibexample` built from [dylib.c](https://github.com/nervosnetwork/ckb-lua-vm/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) is also available to use.
 
 # Preparing Shared Library
 
 ## Packing the Shared Library Into the Dependent Cell Data
 
-To use the ckb-lua shared library, we need to store the shared library in some cell data and specify the cell with shared library data as a dependent cell. We have assembled a [mock transaction file](https://crates.io/crates/ckb-mock-tx-types) [here](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/dylib.json). You can also mock this with the ckb rust SDK (like [this](https://github.com/nervosnetwork/ckb-production-scripts/blob/master/tests/xudt_rce_rust/tests/test_xudt_rce.rs)). You can use it along with [ckb-standalone-debugger](https://github.com/nervosnetwork/ckb-standalone-debugger) to run the sample code. For example, you can run `./build/dylibexample` with `ckb-debugger --tx-file ./tests/test_cases/dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin build/dylibexample`.
+To use the ckb-lua-vm shared library, we need to store the shared library in some cell data and specify the cell with shared library data as a dependent cell. We have assembled a [mock transaction file](https://crates.io/crates/ckb-mock-tx-types) [here](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/dylib.json). You can also mock this with the ckb rust SDK (like [this](https://github.com/nervosnetwork/ckb-production-scripts/blob/master/tests/xudt_rce_rust/tests/test_xudt_rce.rs)). You can use it along with [ckb-standalone-debugger](https://github.com/nervosnetwork/ckb-standalone-debugger) to run the sample code. For example, you can run `./build/dylibexample` with `ckb-debugger --tx-file ./tests/test_cases/dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin build/dylibexample`.
 
 ## Passing the Dependent Cell Information with Script Args
 
@@ -86,9 +86,9 @@ Calling `lua_close_instance` will release all the resources used by Lua. It take
 
 ### Functions in Lua Standard Library
 
-Most of the functions in Lua standard library have been ported to ckb-lua. You can expect all the platform-independent functions to work. But some platform-dependent functions (e.g. all functions in the module `os`) are not provided in ckb-lua.
+Most of the functions in Lua standard library have been ported to ckb-lua-vm. You can expect all the platform-independent functions to work. But some platform-dependent functions (e.g. all functions in the module `os`) are not provided in ckb-lua-vm.
 
-TODO: add list of functions that are not available in ckb-lua.
+TODO: add list of functions that are not available in ckb-lua-vm.
 
 ### CKB Specific Functions
 
@@ -142,7 +142,7 @@ loads the ckb script and unpacks it into `code_hash`, `hash_type` and `args`. If
 
 # Request for Comments
 
-The prototype of ckb-lua is now somewhat complete. We are now gathering feedback on the usage of ckb-lua. If you have any use cases that are not easily met by the current ckb-lua implementation in mind, please feel free to leave comments at the [ckb-lua](https://github.com/XuJiandong/ckb-lua) repository.
+The prototype of ckb-lua-vm is now somewhat complete. We are now gathering feedback on the usage of ckb-lua-vm. If you have any use cases that are not easily met by the current ckb-lua-vm implementation in mind, please feel free to leave comments at the [ckb-lua-vm](https://github.com/nervosnetwork/ckb-lua-vm) repository.
 
 # Appendix: Exported Lua Functions and Constants in the CKB Module
 
@@ -169,7 +169,7 @@ Most of they may return an error as the last argument. The error is a non-zero i
 
 ### More Examples
 
-[See ckb syscall test cases](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua).
+[See ckb syscall test cases](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua).
 
 ### Functions
 
@@ -179,7 +179,7 @@ Note when partial loading support is enabled, the description for arguments leng
 #### `ckb.dump`
 description: dump a returned buffer to stdout
 
-calling example: [`ckb.dump(buf)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L101-L105)
+calling example: [`ckb.dump(buf)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L101-L105)
 
 arguments: buf (a buffer returned from syscalls below)
 
@@ -227,7 +227,7 @@ see also: [file system documentation](./fs.md)
 #### `ckb.load_tx_hash`
 description: load the transaction hash
 
-calling example: [`buf, err = ckb.load_tx_hash()`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L51-L53)
+calling example: [`buf, err = ckb.load_tx_hash()`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L51-L53)
 
 arguments: none
 
@@ -240,7 +240,7 @@ see also: [`ckb_load_tx_hash` syscall](https://github.com/nervosnetwork/rfcs/blo
 #### `ckb.load_script_hash`
 description: load the hash of current script
 
-calling example: [`buf, error = ckb.load_script_hash()`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L63-L65)
+calling example: [`buf, error = ckb.load_script_hash()`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L63-L65)
 
 arguments: none
 
@@ -253,7 +253,7 @@ see also: [`ckb_load_script_hash` syscall](https://github.com/nervosnetwork/rfcs
 #### `ckb.load_script`
 description: load current script
 
-calling example: [`buf, error = ckb.load_script()`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L59-L61)
+calling example: [`buf, error = ckb.load_script()`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L59-L61)
 
 arguments: none
 
@@ -266,7 +266,7 @@ see also: [`ckb_load_script` syscall](https://github.com/nervosnetwork/rfcs/blob
 #### `ckb.load_and_unpack_script`
 description: load and unpack current script
 
-calling example: [`code_hash, hash_type, args, error = ckb.load_and_unpack_script()`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L172-L176)
+calling example: [`code_hash, hash_type, args, error = ckb.load_and_unpack_script()`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L172-L176)
 
 arguments: none
 
@@ -275,7 +275,7 @@ return values: code_hash (the code hash of current script), hash_type (the hash 
 #### `ckb.load_transaction`
 description: load current transaction
 
-calling example: [`buf, error = ckb.load_transaction()`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L55-L57)
+calling example: [`buf, error = ckb.load_transaction()`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L55-L57)
 
 arguments: none
 
@@ -288,7 +288,7 @@ see also: [`ckb_load_transaction` syscall](https://github.com/nervosnetwork/rfcs
 #### `ckb.load_cell`
 description: load cell
 
-calling example: [`buf, error = ckb.load_cell(index, source)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L67-L73)
+calling example: [`buf, error = ckb.load_cell(index, source)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L67-L73)
 
 arguments: index (the index of the cell), source (the source of the cell)
 
@@ -301,7 +301,7 @@ see also: [`ckb_load_cell` syscall](https://github.com/nervosnetwork/rfcs/blob/m
 #### `ckb.load_input`
 description: load input cell
 
-calling example: [`buf, error = ckb.load_input(index, source)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L143-L145)
+calling example: [`buf, error = ckb.load_input(index, source)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L143-L145)
 
 arguments: index (the index of the cell), source (the source of the cell)
 
@@ -314,7 +314,7 @@ see also: [`ckb_load_input` syscall](https://github.com/nervosnetwork/rfcs/blob/
 #### `ckb.load_header`
 description: load cell header
 
-calling example: [`buf, error = ckb.load_header(index, source)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L160-L163)
+calling example: [`buf, error = ckb.load_header(index, source)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L160-L163)
 
 arguments: index (the index of the cell), source (the source of the cell)
 
@@ -327,7 +327,7 @@ see also: [`ckb_load_header` syscall](https://github.com/nervosnetwork/rfcs/blob
 #### `ckb.load_witness`
 description: load the witness
 
-calling example: [`buf, error = ckb.load_witness(index, source, length, offset)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L3-L49)
+calling example: [`buf, error = ckb.load_witness(index, source, length, offset)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L3-L49)
 
 arguments: index (the index of the cell), source (the source of the cell)
 
@@ -340,7 +340,7 @@ see also: [`ckb_load_witness` syscall](https://github.com/nervosnetwork/rfcs/blo
 #### `ckb.load_cell_data`
 description: load cell data
 
-calling example: [`buf, error = ckb.load_cell_data(index, source, length, offset)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L135-L141)
+calling example: [`buf, error = ckb.load_cell_data(index, source, length, offset)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L135-L141)
 
 arguments: index (the index of the cell), source (the source of the cell)
 
@@ -353,7 +353,7 @@ see also: [`ckb_load_cell_data` syscall](https://github.com/nervosnetwork/rfcs/b
 #### `ckb.load_cell_by_field`
 description: load cell data field
 
-calling example: [`buf, error = ckb.load_cell_by_field(index, source, field)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L75-L133)
+calling example: [`buf, error = ckb.load_cell_by_field(index, source, field)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L75-L133)
 
 arguments: index (the index of the cell), source (the source of the cell), field (the field to load)
 
@@ -366,7 +366,7 @@ see also: [`ckb_load_cell_by_field` syscall](https://github.com/nervosnetwork/rf
 #### `ckb.load_input_by_field`
 description: load input field
 
-calling example: [`buf, error = ckb.load_input_by_field(index, source, field)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L147-L155)
+calling example: [`buf, error = ckb.load_input_by_field(index, source, field)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L147-L155)
 
 arguments: index (the index of the cell), source (the source of the cell), field (the field to load)
 
@@ -379,7 +379,7 @@ see also: [`ckb_load_input_by_field` syscall](https://github.com/nervosnetwork/r
 #### `ckb.load_header_by_field`
 description: load header by field
 
-calling example: [`ckb.load_header_by_field(index, source, field)`](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L157-L170)
+calling example: [`ckb.load_header_by_field(index, source, field)`](https://github.com/nervosnetwork/ckb-lua-vm/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/test_ckbsyscalls.lua#L157-L170)
 
 arguments: index (the index of the cell), source (the source of the cell), field (the field to load)
 
@@ -392,7 +392,7 @@ see also: [`ckb_load_header_by_field` syscall](https://github.com/nervosnetwork/
 #### `ckb.unpack_script`
 description: unpack the buffer that contains the molecule structure `Script`
 
-calling example: [`ckb.unpack_script(buf)`](https://github.com/contrun/ckb-lua/blob/4c05beeaa679acfd0b5e8d24e6c012374f08f11b/tests/test_cases/test_ckbsyscalls.lua#L191C56-L195)
+calling example: [`ckb.unpack_script(buf)`](https://github.com/contrun/ckb-lua-vm/blob/4c05beeaa679acfd0b5e8d24e6c012374f08f11b/tests/test_cases/test_ckbsyscalls.lua#L191C56-L195)
 
 arguments: buf (the buffer that contains the molecule structure `Script`)
 
@@ -457,7 +457,7 @@ see also: [The molecule definition of `CellDep`](https://github.com/nervosnetwor
 
 ## Exported constants
 
-While most constants here are directly taken from [ckb_consts.h](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/ckb_consts.h), we also defined some are ckb-lua specific constants like `ckb.LUA_ERROR_INTERNAL`.
+While most constants here are directly taken from [ckb_consts.h](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/ckb_consts.h), we also defined some are ckb-lua-vm specific constants like `ckb.LUA_ERROR_INTERNAL`.
 
 ```
 ckb.SUCCESS
