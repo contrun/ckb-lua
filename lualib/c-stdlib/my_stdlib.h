@@ -6,5 +6,7 @@ double strtod(const char *__restrict, char **__restrict);
 long double strtold(const char *__restrict, char **__restrict);
 
 int abs (int);
+void exit(int);
+void abort(void);
 
 #endif /* LUA_C_STDLIB_STDLIB_H_ */

@@ -9,7 +9,7 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <locale.h>
+#include "my_locale.h"
 #include <stdlib.h>
 #include <string.h>
 #include "my_stdio.h"
