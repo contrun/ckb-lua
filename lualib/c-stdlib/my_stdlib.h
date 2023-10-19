@@ -9,4 +9,6 @@ int abs (int);
 void exit(int);
 void abort(void);
 
+char *getenv(const char *name);
+
 #endif /* LUA_C_STDLIB_STDLIB_H_ */

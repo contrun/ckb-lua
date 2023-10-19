@@ -14,4 +14,6 @@ int strcoll (const char *, const char *);
 
 char *strerror (int);
 
+char *strstr(const char *str, const char *substr);
+
 #endif /* LUA_C_STDLIB_STRING_H_ */

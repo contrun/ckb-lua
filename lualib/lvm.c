@@ -13,7 +13,7 @@
 #include <limits.h>
 #include "my_math.h"
 #include <stdlib.h>
-#include <string.h>
+#include "my_string.h"
 #include "my_stdio.h"
 
 #include "ldebug.h"

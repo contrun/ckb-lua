@@ -10,8 +10,15 @@
 #define DBL_MAX __DBL_MAX__
 #define LDBL_MAX __LDBL_MAX__
 
-#undef DBL_MANT_DIGc
+#undef DBL_MAX_10_EXP
+#define DBL_MAX_10_EXP __DBL_MAX_10_EXP__
+
+#undef DBL_MANT_DIG
 #define DBL_MANT_DIG __DBL_MANT_DIG__
+
+#ifndef HUGE_VAL
+# define HUGE_VAL (__builtin_huge_val())
+#endif
 
 typedef union {
     double value;
