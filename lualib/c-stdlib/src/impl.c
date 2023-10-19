@@ -1,12 +1,12 @@
 #include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <setjmp.h>
-#include <stdint.h>
+#include "my_locale.h"
+#include "my_math.h"
+#include "my_setjmp.h"
+#include "my_stdint.h"
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
+#include "my_stddef.h"
+#include "my_string.h"
 
 #include "printf_impl.h"
 #include "malloc_impl.h"
