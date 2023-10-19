@@ -2,6 +2,7 @@
 #define LUA_C_STDLIB_STRING_H_
 
 #include <stddef.h>
+#include <string.h>
 
 char *strchr (const char *, int);
 int strncmp(const char *_l, const char *_r, size_t n);
