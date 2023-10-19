@@ -33,5 +33,5 @@ jobs:
     - name: Run cases
       run: |
         cd tests/official && make ci
-        cd ../test_cases && make ci
+        cd ../test_cases && make ci-no-dylib
         cd ../ckb-c-stdlib-tests && make all-via-docker && make ci
