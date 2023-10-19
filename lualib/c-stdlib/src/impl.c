@@ -927,3 +927,39 @@ done:
 
   return value * sign;
 }
+
+int iscntrl(int c)
+{
+	return (unsigned)c < 0x20 || c == 0x7f;
+}
+
+int isgraph(int c)
+{
+	return (unsigned)c-0x21 < 0x5e;
+}
+
+
+int isalpha(int c)
+{
+	return ((unsigned)c|32)-'a' < 26;
+}
+
+int isdigit(int c)
+{
+	return (unsigned)c-'0' < 10;
+}
+
+int isxdigit(int c)
+{
+	return isdigit(c) || ((unsigned)c|32)-'a' < 6;
+}
+
+int isalnum(int c)
+{
+	return isalpha(c) || isdigit(c);
+}
+
+int ispunct(int c)
+{
+	return isgraph(c) && !isalnum(c);
+}
