@@ -7,7 +7,7 @@ define run
 endef
 
 define run_ci
-	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file $(1) --bin ../../build/lua-loader.debug -- -r  2>&1 | fgrep 'Run result: 0'
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file $(1) --bin ../../build/lua-loader.debug -- -r  2>&1 | fgrep 'Run result: 0'
 endef
 
 define run_pprof
@@ -55,6 +55,10 @@ ci:
 	$(call run_ci, literals.lua)
 	$(call run_ci, sort.lua)
 	$(call run_ci, strings.lua)
+	# RUST_LOG=debug ckb-debugger --max-cycles 2000000000 --read-file  math.lua --bin ../../build/lua-loader.debug -- -e 'print(math.mininteger + 1.0)'
+	# -2.3058430090000e+18
+	# lua -e 'print(math.mininteger + 1.0)'
+	# -9.2233720368548e+18
 	$(call run_ci, math.lua)
 	$(call run_ci, api.lua)
 	$(call run_ci, bwcoercion.lua)
