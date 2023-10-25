@@ -4,12 +4,12 @@ ifeq ($(origin LLVM_VERSION),undefined)
 	LLVM_VERSION = 16
 endif
 
-LLVM_SURFFIX = $(if $(LLVM_VERSION),-$(LLVM_VERSION),)
-CC := clang${LLVM_SURFFIX}
-LD := ld.lld${LLVM_SURFFIX}
-OBJCOPY := llvm-objcopy${LLVM_SURFFIX}
-AR := llvm-ar${LLVM_SURFFIX}
-RANLIB := llvm-ranlib${LLVM_SURFFIX}
+LLVM_SUFFIX = $(if $(LLVM_VERSION),-$(LLVM_VERSION),)
+CC := clang${LLVM_SUFFIX}
+LD := ld.lld${LLVM_SUFFIX}
+OBJCOPY := llvm-objcopy${LLVM_SUFFIX}
+AR := llvm-ar${LLVM_SUFFIX}
+RANLIB := llvm-ranlib${LLVM_SUFFIX}
 
 CFLAGS := --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs
 CFLAGS += -D__ISO_C_VISIBLE=1999 -DCKB_DECLARATION_ONLY -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY -fPIC -g -O3
@@ -24,19 +24,7 @@ CFLAGS += -Wall -Werror -Wno-error=unused-command-line-argument -Wno-error=incom
 LDFLAGS := -static --gc-sections
 LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build -lcompiler-rt
 
-DOCKER_USER := $(shell id -u):$(shell id -g)
-DOCKER_EXTRA_FLAGS ?=
-# docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
-BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
-PORT ?= 9999
-
 all: lualib/liblua.a build/lua-loader build/spawnexample
-
-all-via-docker:
-	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
-
-docker-interactive:
-	docker run --user ${DOCKER_USER} --rm -it -v "${CURRENT_DIR}:/code" --workdir /code --entrypoint /bin/bash ${DOCKER_EXTRA_FLAGS} ${BUILDER_DOCKER}
 
 deps/compiler-rt-builtins-riscv/build/libcompiler-rt.a:
 	cd deps/compiler-rt-builtins-riscv && $(MAKE) CC=$(CC) LD=$(LD) OBJCOPY=$(OBJCOPY) AR=$(AR) RANLIB=$(RANLIB)
@@ -59,17 +47,8 @@ build/spawnexample: build/spawnexample.o build/stdlib.o deps/compiler-rt-builtin
 build/lua-loader.o: lua-loader/lua-loader.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-# We need the soft floating point number support from libgcc.
-# Note when -nostdlib is specified, libgcc is not linked to the program automatically.
-# Also note libgcc.a must be appended to the file list, simply -lgcc does not for some reason.
-# It seems gcc does not search libgcc in the install path.
 build/lua-loader: build/lua-loader.o build/stdlib.o lualib/liblua.a deps/compiler-rt-builtins-riscv/build/libcompiler-rt.a
 	$(LD) $(LDFLAGS) -o $@ $^
-	cp $@ $@.debug
-	$(OBJCOPY) --strip-debug --strip-all $@
-
-build/libckblua.so: build/lua-loader.o lualib/liblua.a
-	$(LD) $(LDFLAGS) -Wl,--dynamic-list lua-loader/libckblua.syms -fpic -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
@@ -83,13 +62,10 @@ clean-local:
 	rm -f build/libckblua*
 	rm -f build/dylibtest
 	rm -f build/dylibexample
-	rm -f build/spawnexample
+	rm -f build/spawnexample*
 
 clean: clean-local
 	make -C lualib clean
-
-run-docker:
-	docker run --rm --network host -it -v `pwd`:/code ${BUILDER_DOCKER} bash
 
 run-gdb:
 	riscv64-unknown-linux-gnu-gdb -ex "target remote 127.0.0.1:${PORT}" build/lua-loader.debug
