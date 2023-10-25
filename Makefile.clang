@@ -46,7 +46,7 @@ build/stdlib.o: include/ckb-c-stdlib/libc/src/impl.c
 	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
 
 lualib/liblua.a:
-	make -C lualib -f Makefile.clang liblua.a
+	make -C lualib -f Makefile.clang CC=$(CC) liblua.a
 
 build/spawnexample.o: examples/spawn.c
 	$(CC) -c $(CFLAGS) -o $@ $<

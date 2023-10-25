@@ -6,7 +6,7 @@
 # Your platform. See PLATS for possible values.
 PLAT= guess
 
-CC= clang-16
+CC ?= clang-16
 # -ULUA_USE_LINUX -ULUA_USE_POSIX to make lua dependencies minimal,
 # otherwise, we may unable to find various platform dependent symbols, e.g.
 # setsignal.
